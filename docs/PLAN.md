@@ -60,14 +60,14 @@ Un solo módulo Gradle al inicio, pero con **paquetes por capa y dependencias en
 
 ## Reglas: usuario (macbook) vs proyecto
 - **Nivel usuario** (`~/.claude/CLAUDE.md`, ya existe): rol, seguridad, git, estilo (identificadores en inglés, comentarios en español), disciplina de dependencias. **No se duplica.**
-- **Nivel proyecto** (`DroidInspector/CLAUDE.md`, versionado): solo lo específico y que no está arriba: propósito, arquitectura de capas y regla de dependencias, paquete, `minSdk=29`, "sin permiso INTERNET", "datos de uso = sensibles, nunca al repo", comandos (`./gradlew test`, `assembleDebug`), y la regla de abrir `checklist-local.md` antes y después de cada paso. Referencia al global con una línea; en conflicto manda el del proyecto (convenciones existentes).
+- **Nivel proyecto** (`DroidInspector/.claude/CLAUDE.md`, versionado): solo lo específico y que no está arriba: propósito, arquitectura de capas y regla de dependencias, paquete, `minSdk=29`, "sin permiso INTERNET", "datos de uso = sensibles, nunca al repo", comandos (`./gradlew test`, `assembleDebug`), y la regla de abrir `checklist-local.md` antes y después de cada paso. Referencia al global con una línea; en conflicto manda el del proyecto (convenciones existentes).
 
 ## Estructura de `.claude/` del proyecto
 ```
 DroidInspector/
-├── CLAUDE.md                  # reglas del proyecto (versionado)
 ├── checklist-local.md         # trazabilidad (ver abajo; versionado)
 └── .claude/
+    ├── CLAUDE.md              # reglas del proyecto (versionado)
     ├── settings.json          # permisos compartidos: allow ./gradlew, git status/diff/log; deny leer local.properties/keystores (versionado)
     ├── settings.local.json    # preferencias personales (en .gitignore)
     └── rules/                 # reglas por tema, cargadas solo cuando aplican
@@ -93,7 +93,7 @@ Hoy no es repo git y no existe remoto. Punto de retorno primero: lo primero es v
 1. `git init` en la raíz con rama `main`; luego `develop` (flujo feature → develop → main, a confirmar).
 2. Identidad: verificar `git config user.email` y fijar `user.name`/`user.email` **con `--local`** (proyecto de auditorías a clientes; no mezclar con personal).
 3. Ya existe un `.gitignore` de la plantilla: **revisarlo y completarlo** antes del primer commit (sin duplicar). Por pedido, **incluirá una línea `.gitignore` a sí mismo**. Trade-off: el archivo no viaja a GitHub, así que otro clon (u otra máquina) no hereda las reglas y podría subir basura o secretos; mitigación: las reglas clave también se documentan en `CLAUDE.md` y el checklist. Debe ir antes del primer `git add` (si ya está trackeado, la línea no surte efecto). Asegurar: `build/`, `.claude/settings.local.json`, `.gradle/`, `.idea/`, `local.properties`, `*.jks`/`*.keystore`, `*.apk`/`*.aab`, y `*.pdf`/`*.json` de auditorías de prueba (datos de uso son sensibles; nunca al repo).
-4. Crear `CLAUDE.md`, `.claude/`, `checklist-local.md` y `docs/` (`PLAN.md`, `flow.excalidraw`, `architecture.drawio`) (según secciones de arriba) y hacer el primer commit con la plantilla tal cual más esos archivos (archivos agregados por ruta, sin `git add .`; revisar `git status` antes) → queda como punto de retorno.
+4. Crear `.claude/` (con `CLAUDE.md`), `checklist-local.md` y `docs/` (`PLAN.md`, `flow.excalidraw`, `architecture.drawio`) (según secciones de arriba) y hacer el primer commit con la plantilla tal cual más esos archivos (archivos agregados por ruta, sin `git add .`; revisar `git status` antes) → queda como punto de retorno.
 5. Crear repo en GitHub **privado** (`gh repo create`, acción externa: confirmo cuenta/org, nombre y visibilidad contigo antes de ejecutarlo) y push de `main` y `develop`. Verificar que `gh auth status` corresponde a la cuenta correcta.
 6. Firma de release: keystore fuera del repo, credenciales por variables/`local.properties`, jamás commiteadas.
 Commits cortos, una línea; un commit por paso lógico del MVP.

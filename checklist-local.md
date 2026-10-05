@@ -5,7 +5,7 @@ Estados: `[ ]` pendiente · `[~]` en curso · `[x]` hecho. Cada ítem: archivo/s
 ## Decisiones
 - 2026-10-05 · `minSdk=29` (piso, no versión exacta): `MediaStore.Downloads` sin permiso de almacenamiento y eventos de uso estables. Alternativa solo si un cliente lo exige: 26.
 - 2026-10-05 · Repo **público** `Ox19/DroidInspector`; commits con `AlxOps` + noreply de GitHub (`--local`). Cambios al repo requieren aprobación del dueño (protección de rama en `main`).
-- 2026-10-05 · `.gitignore` se ignora a sí mismo (pedido). Reglas de respaldo en [CLAUDE.md](CLAUDE.md).
+- 2026-10-05 · `.gitignore` se ignora a sí mismo (pedido). Reglas de respaldo en [CLAUDE.md](.claude/CLAUDE.md).
 - 2026-10-05 · Este checklist se versiona pese al nombre "local".
 
 ## Fase 0 — Repositorio y documentación
@@ -13,7 +13,7 @@ Estados: `[ ]` pendiente · `[~]` en curso · `[x]` hecho. Cada ítem: archivo/s
 - [x] Identidad local fijada (`git config --local`) · 2026-10-05
 - [x] [.gitignore](.gitignore) completado (incluye a sí mismo, `.idea/`, `build/`, `*.pdf`, firmas) · 2026-10-05
 - [x] Commit de plantilla como punto de retorno · `459d776` · 2026-10-05
-- [x] [CLAUDE.md](CLAUDE.md), [.claude/](.claude/), [docs/PLAN.md](docs/PLAN.md), diagramas [flow](docs/flow.excalidraw) y [arquitectura](docs/architecture.drawio) · `29a816f` · 2026-10-05
+- [x] [CLAUDE.md](.claude/CLAUDE.md), [.claude/](.claude/), [docs/PLAN.md](docs/PLAN.md), diagramas [flow](docs/flow.excalidraw) y [arquitectura](docs/architecture.drawio) · `29a816f` · 2026-10-05
 - [x] Repo público https://github.com/Ox19/DroidInspector (ya existía vacío) y push de `main` y `develop` · `29a816f` · 2026-10-05
 - [x] Protección de `main`: PR + 1 aprobación, sin force-push ni borrado; `enforce_admins` apagado para el dueño · 2026-10-05
 
