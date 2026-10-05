@@ -13,9 +13,9 @@ Estados: `[ ]` pendiente · `[~]` en curso · `[x]` hecho. Cada ítem: archivo/s
 - [x] Identidad local fijada (`git config --local`) · 2026-10-05
 - [x] [.gitignore](.gitignore) completado (incluye a sí mismo, `.idea/`, `build/`, `*.pdf`, firmas) · 2026-10-05
 - [x] Commit de plantilla como punto de retorno · `459d776` · 2026-10-05
-- [~] [CLAUDE.md](CLAUDE.md), [.claude/](.claude/), [docs/PLAN.md](docs/PLAN.md), diagramas [flow](docs/flow.excalidraw) y [arquitectura](docs/architecture.drawio)
-- [ ] Crear repo público en GitHub y push de `main` y `develop`
-- [ ] Protección de rama `main` (PR + aprobación del dueño)
+- [x] [CLAUDE.md](CLAUDE.md), [.claude/](.claude/), [docs/PLAN.md](docs/PLAN.md), diagramas [flow](docs/flow.excalidraw) y [arquitectura](docs/architecture.drawio) · `29a816f` · 2026-10-05
+- [x] Repo público https://github.com/Ox19/DroidInspector (ya existía vacío) y push de `main` y `develop` · `29a816f` · 2026-10-05
+- [x] Protección de `main`: PR + 1 aprobación, sin force-push ni borrado; `enforce_admins` apagado para el dueño · 2026-10-05
 
 ## Fase 2 — MVP
 - [ ] `minSdk=29` y actualizar `core-ktx`, `lifecycle-runtime-ktx`, `activity-compose` · [app/build.gradle.kts](app/build.gradle.kts), [libs.versions.toml](gradle/libs.versions.toml)
@@ -38,3 +38,4 @@ Estados: `[ ]` pendiente · `[~]` en curso · `[x]` hecho. Cada ítem: archivo/s
 
 ## Bitácora
 - 2026-10-05 · Plan aprobado; repo inicializado y plantilla commiteada (`459d776`).
+- 2026-10-05 · Docs, reglas y diagramas (`29a816f`); push a GitHub y protección de `main`. Fase 0 cerrada.
