@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # El .gitignore no viaja al remoto: esto impide que se cuelen secretos o datos de clientes
+      - name: Bloquear archivos prohibidos
+        run: |
+          forbidden="$(git ls-files | grep -E '\.(jks|keystore|apk|aab|pdf)$|(^|/)local\.properties$|^\.claude/|^checklist-local\.md$|^docs/' || true)"
+          if [[ -n "$forbidden" ]]; then
+            echo "Archivos prohibidos en el repo:"; echo "$forbidden"; exit 1
+          fi
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - name: Lint, tests unitarios y compilación
+        run: ./gradlew lintDebug testDebugUnitTest assembleDebug
+
+  # Alimenta el grafo de dependencias (SBOM, Dependabot y dependency-review para Gradle)
+  dependency-graph:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          dependency-graph: generate-and-submit
+      - run: ./gradlew assembleDebug
