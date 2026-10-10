@@ -2,10 +2,19 @@
 buildscript {
     dependencies {
         constraints {
-            // AGP 9.4.1 trae BouncyCastle 1.80.2 (alertas GHSA-9pwp-9qqc-pr26 y otras); se fuerza el fix
-            listOf("bcprov", "bcpkix", "bcutil").forEach { module ->
-                add("classpath", "org.bouncycastle:$module-jdk18on:1.85") {
-                    because("Alertas de Dependabot en 1.80.2; AGP aún no sube la versión")
+            // AGP 9.4.1 arrastra versiones con alertas de Dependabot; se fuerza la mínima parcheada
+            // de cada una (no la última) para alejarse lo menos posible de lo que AGP probó.
+            val patchedBuildDependencies = listOf(
+                "org.bouncycastle:bcprov-jdk18on:1.85",
+                "org.bouncycastle:bcpkix-jdk18on:1.85",
+                "org.bouncycastle:bcutil-jdk18on:1.85",
+                "org.apache.commons:commons-lang3:3.18.0",
+                "org.jdom:jdom2:2.0.6.1",
+                "org.bitbucket.b_c:jose4j:0.9.6",
+            )
+            patchedBuildDependencies.forEach { dependency ->
+                add("classpath", dependency) {
+                    because("Alerta de Dependabot en la versión que trae AGP")
                 }
             }
         }
