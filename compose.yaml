@@ -1,7 +1,8 @@
 # Builds aislados de macOS. Uso:
 #   docker compose run --rm prepare   # con red: descarga dependencias y SDK, compila
 #   docker compose run --rm verify    # sin red: lint, tests y APK reproducibles offline
-#   docker compose run --rm regen     # con red: regenera gradle/verification-metadata.xml
+# El metadata de checksums NO se regenera aquí: requiere caché de Gradle limpia, así que
+# se genera en CI empujando una rama regen/<tema> (ver .github/workflows/regen-verification.yml).
 # El único dato del host que ve el contenedor es esta carpeta del repo.
 name: droidinspector
 
@@ -41,9 +42,6 @@ services:
     network_mode: none
     command: ["./gradlew", "--offline", "--rerun-tasks", "lintDebug", "testDebugUnitTest", "assembleDebug"]
 
-  regen:
-    <<: *build
-    command: ["./gradlew", "--write-verification-metadata", "sha256", "lintDebug", "testDebugUnitTest", "assembleDebug"]
 
 volumes:
   gradle-home:
