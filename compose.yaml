@@ -1,0 +1,50 @@
+# Builds aislados de macOS. Uso:
+#   docker compose run --rm prepare   # con red: descarga dependencias y SDK, compila
+#   docker compose run --rm verify    # sin red: lint, tests y APK reproducibles offline
+#   docker compose run --rm regen     # con red: regenera gradle/verification-metadata.xml
+# El único dato del host que ve el contenedor es esta carpeta del repo.
+name: droidinspector
+
+x-build: &build
+  build:
+    context: docker
+    dockerfile: Dockerfile
+  image: droidinspector-build:local
+  platform: linux/amd64
+  working_dir: /workspace
+  user: "1000:1000"
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  volumes:
+    - .:/workspace
+    - gradle-home:/home/builder/.gradle
+    - android-sdk:/opt/android-sdk
+    # Archivos locales: vacíos dentro (local.properties apunta al SDK de macOS)
+    - /dev/null:/workspace/local.properties:ro
+    - /dev/null:/workspace/checklist-local.md:ro
+  # El build no necesita historial git ni material interno
+  tmpfs:
+    - /workspace/.git
+    - /workspace/.claude
+    - /workspace/docs
+  environment:
+    ISOLATED_BUILD: "1"
+    GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+services:
+  prepare:
+    <<: *build
+    command: ["./gradlew", "lintDebug", "testDebugUnitTest", "assembleDebug"]
+
+  verify:
+    <<: *build
+    network_mode: none
+    command: ["./gradlew", "--offline", "--rerun-tasks", "lintDebug", "testDebugUnitTest", "assembleDebug"]
+
+  regen:
+    <<: *build
+    command: ["./gradlew", "--write-verification-metadata", "sha256", "lintDebug", "testDebugUnitTest", "assembleDebug"]
+
+volumes:
+  gradle-home:
+  android-sdk:

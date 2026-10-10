@@ -1,4 +1,8 @@
 pluginManagement {
+    // Guarda: el build solo corre aislado (contenedor o CI), nunca en el host ni en el sync del IDE
+    check(System.getenv("ISOLATED_BUILD") == "1" || System.getenv("GITHUB_ACTIONS") == "true") {
+        "Build bloqueado fuera de aislamiento. Usa: docker compose run --rm prepare"
+    }
     repositories {
         google {
             content {
