@@ -10,6 +10,8 @@ App Android (Kotlin + Jetpack Compose) que audita la **actividad de uso del prop
 - Requiere el acceso especial *Acceso a datos de uso*, que el usuario concede de forma explícita en Ajustes.
 - El PDF es el único artefacto generado.
 
+La arquitectura y sus límites están en [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Requisitos
 
 - Android 10 (API 29) o superior.
