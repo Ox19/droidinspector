@@ -2,10 +2,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Acceso especial: la app solo lo declara, el usuario lo concede en Ajustes -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <!-- Android 11+ oculta las apps instaladas; se necesita para su nombre e icono.
+         <queries> no sirve: una auditoría no sabe de antemano qué apps usa el cliente.
+         Consecuencia asumida: la app no es publicable en Play Store. -->
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+    <!-- Sin INTERNET a propósito: la auditoría no sale del dispositivo -->
+
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -14,7 +25,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.DroidInspector"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
