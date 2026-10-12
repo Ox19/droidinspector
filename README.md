@@ -10,17 +10,25 @@ App Android (Kotlin + Jetpack Compose) que audita la **actividad de uso del prop
 - Requiere el acceso especial *Acceso a datos de uso*, que el usuario concede de forma explícita en Ajustes.
 - El PDF es el único artefacto generado.
 
+La arquitectura y sus límites están en [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Requisitos
 
-- Android 10 (API 29) o superior.
-- Android Studio con JDK 25 (lo resuelve Gradle) para compilar.
+- Android 10 (API 29) o superior para ejecutar la app.
+- Docker para compilar.
 
 ## Compilar y probar
 
+El build corre dentro de un contenedor, no en la máquina de desarrollo: `settings.gradle.kts`
+aborta cualquier invocación de Gradle fuera del contenedor o de CI.
+
 ```
-./gradlew assembleDebug
-./gradlew lintDebug testDebugUnitTest
+docker compose run --rm prepare   # con red: resuelve dependencias y compila
+docker compose run --rm verify    # sin red: lint, tests y APK
 ```
+
+El APK queda en `app/build/outputs/apk/debug/`. Para probarlo en un emulador o
+dispositivo: `adb install -r app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Contribuir
 
