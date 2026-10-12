@@ -6,9 +6,10 @@ ARG CMDLINE_TOOLS_ZIP=commandlinetools-linux-16111833_latest.zip
 # SHA-1 publicado por Google en repository2-3.xml (único checksum que ofrece)
 ARG CMDLINE_TOOLS_SHA1=e025545c62a8e64c7559119566a569fb1dec5f60
 ENV ANDROID_HOME=/opt/android-sdk
+ENV PATH="/opt/android-sdk/platform-tools:${PATH}"
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates curl unzip \
+ && apt-get install -y --no-install-recommends ca-certificates curl socat unzip \
  && rm -rf /var/lib/apt/lists/* \
  && (userdel --remove ubuntu 2>/dev/null || true) \
  && useradd --create-home --uid 1000 builder \
@@ -28,4 +29,4 @@ RUN curl -fsSLo /tmp/cmdline-tools.zip "https://dl.google.com/android/repository
 # Versiones que pide AGP 9.4.1. cmdline-tools 23 usa "/" y acepta la licencia al instalar.
 # Si AGP pide otra, la descarga en la fase con red (la licencia ya está en el SDK).
 RUN yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" \
-      "platforms/android-37.0" "build-tools/36.0.0"
+      "platforms/android-37.0" "build-tools/36.0.0" "platform-tools"

@@ -20,6 +20,9 @@ x-build: &build
     - .:/workspace
     - gradle-home:/home/builder/.gradle
     - android-sdk:/opt/android-sdk
+    # Mantiene estable el keystore de debug entre corridas: si cambia, el emulador
+    # rechaza la reinstalación con INSTALL_FAILED_UPDATE_INCOMPATIBLE
+    - android-home:/home/builder/.android
     # Archivos locales: vacíos dentro (local.properties apunta al SDK de macOS)
     - /dev/null:/workspace/local.properties:ro
     - /dev/null:/workspace/checklist-local.md:ro
@@ -42,7 +45,28 @@ services:
     network_mode: none
     command: ["./gradlew", "--offline", "--rerun-tasks", "lintDebug", "testDebugUnitTest", "assembleDebug"]
 
+  # Tests instrumentados contra el emulador que corre en el host. Docker Desktop hace de
+  # puente hasta el adb del host, que sigue atado a 127.0.0.1: no se expone a la red.
+  connected:
+    <<: *build
+    # El DeviceMonitor de AGP solo mira 127.0.0.1:5037 (ignora ADB_SERVER_SOCKET), así que
+    # se reenvía ese puerto al adb del host, que además ya está autorizado por el emulador:
+    # así no hace falta montar la clave privada adb de la máquina.
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        socat TCP-LISTEN:5037,fork,reuseaddr TCP:host.docker.internal:5037 &
+        adb wait-for-device
+        ./gradlew connectedDebugAndroidTest
+        # AGP devuelve éxito aunque la instalación falle y no se ejecute ningún test
+        results=$$(find app/build/outputs/androidTest-results -name '*.xml' | head -1)
+        if [ -z "$$results" ] || grep -q 'tests="0"' "$$results"; then
+          echo "ERROR: no se ejecutó ningún test instrumentado"; exit 1
+        fi
+        grep -ohE 'tests="[0-9]+" [^>]*failures="[0-9]+"' "$$results"
+
 
 volumes:
   gradle-home:
   android-sdk:
+  android-home:
