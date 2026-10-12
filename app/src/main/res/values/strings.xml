@@ -1,3 +1,31 @@
 <resources>
     <string name="app_name">DroidInspector</string>
+
+    <string name="consent_title">Auditoría de uso</string>
+    <string name="consent_body">Esta app lee qué aplicaciones se usaron en este dispositivo, cuánto tiempo y en qué horarios, y genera un reporte.\n\nTodo se procesa aquí: no hay conexión a internet y el único archivo que se crea es el PDF que decidas exportar.</string>
+    <string name="consent_accept">Entiendo, continuar</string>
+
+    <string name="permission_title">Falta el acceso a datos de uso</string>
+    <string name="permission_body">Android pide concederlo manualmente en Ajustes. Busca DroidInspector en la lista y actívalo.</string>
+    <string name="permission_open_settings">Abrir Ajustes</string>
+
+    <string name="range_title">Elige el periodo</string>
+    <string name="range_retention_notice">El sistema solo conserva el detalle de los últimos %1$d días.</string>
+    <string name="range_run">Generar auditoría</string>
+
+    <string name="loading">Leyendo la actividad del dispositivo…</string>
+
+    <string name="summary_total_time">Tiempo de uso</string>
+    <string name="summary_apps">Apps usadas</string>
+    <string name="summary_launches">Aperturas</string>
+    <string name="dashboard_apps_title">Tiempo por aplicación</string>
+    <string name="dashboard_empty">No hay actividad registrada en el periodo elegido.</string>
+    <string name="dashboard_new_audit">Elegir otro periodo</string>
+
+    <string name="error_title">No se pudo generar la auditoría</string>
+    <string name="error_retry">Reintentar</string>
+    <plurals name="dashboard_launches">
+        <item quantity="one">%1$d apertura</item>
+        <item quantity="other">%1$d aperturas</item>
+    </plurals>
 </resources>
