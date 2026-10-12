@@ -1,0 +1,136 @@
+package com.example.droidinspector.core
+
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/** Casos que el sistema entrega mal formados: sin salida, solapados o desordenados. */
+class SessionBuilderTest {
+
+    private val builder = SessionBuilder()
+    private val range = AuditRange(at(10, 0), at(12, 0))
+
+    @Test
+    fun `pairs foreground with background`() {
+        val sessions = builder.build(
+            listOf(foreground("chat", at(10, 9)), background("chat", at(10, 10))),
+            range,
+        )
+
+        assertEquals(1, sessions.size)
+        assertEquals(60 * MINUTE, sessions.single().durationMillis)
+    }
+
+    @Test
+    fun `closes a session left open by a session break`() {
+        val sessions = builder.build(
+            listOf(foreground("chat", at(10, 9)), sessionBreak(at(10, 11))),
+            range,
+        )
+
+        assertEquals(2 * 60 * MINUTE, sessions.single().durationMillis)
+    }
+
+    @Test
+    fun `closes a session with no closing event at the end of the range`() {
+        val sessions = builder.build(listOf(foreground("chat", at(11, 23))), range)
+
+        assertEquals(range.endMillis, sessions.single().endMillis)
+    }
+
+    @Test
+    fun `keeps overlapping sessions of different apps`() {
+        val sessions = builder.build(
+            listOf(
+                foreground("chat", at(10, 9)),
+                foreground("maps", at(10, 9, 30)),
+                background("chat", at(10, 10)),
+                background("maps", at(10, 10, 30)),
+            ),
+            range,
+        )
+
+        assertEquals(2, sessions.size)
+        assertEquals(setOf("chat", "maps"), sessions.map { it.packageName }.toSet())
+    }
+
+    @Test
+    fun `ignores a background with no previous foreground`() {
+        assertTrue(builder.build(listOf(background("chat", at(10, 10))), range).isEmpty())
+    }
+
+    @Test
+    fun `a repeated foreground does not open a second session`() {
+        val sessions = builder.build(
+            listOf(
+                foreground("chat", at(10, 9)),
+                foreground("chat", at(10, 9, 30)),
+                background("chat", at(10, 10)),
+            ),
+            range,
+        )
+
+        assertEquals(1, sessions.size)
+        assertEquals(60 * MINUTE, sessions.single().durationMillis)
+    }
+
+    @Test
+    fun `clamps a session that starts before the range`() {
+        val sessions = builder.build(
+            listOf(foreground("chat", at(9, 23)), background("chat", at(10, 1))),
+            range,
+        )
+
+        assertEquals(range.startMillis, sessions.single().startMillis)
+        assertEquals(60 * MINUTE, sessions.single().durationMillis)
+    }
+
+    @Test
+    fun `drops a session outside the range`() {
+        val sessions = builder.build(
+            listOf(foreground("chat", at(9, 1)), background("chat", at(9, 2))),
+            range,
+        )
+
+        assertTrue(sessions.isEmpty())
+    }
+
+    @Test
+    fun `drops a zero length session`() {
+        val sessions = builder.build(
+            listOf(foreground("chat", at(10, 10)), background("chat", at(10, 10))),
+            range,
+        )
+
+        assertTrue(sessions.isEmpty())
+    }
+
+    @Test
+    fun `handles events out of order`() {
+        val sessions = builder.build(
+            listOf(background("chat", at(10, 10)), foreground("chat", at(10, 9))),
+            range,
+        )
+
+        assertEquals(60 * MINUTE, sessions.single().durationMillis)
+    }
+
+    private companion object {
+        const val MINUTE = 60_000L
+        val ZONE: ZoneId = ZoneId.of("America/Lima")
+
+        fun at(day: Int, hour: Int, minute: Int = 0): Long =
+            ZonedDateTime.of(2026, 10, day, hour, minute, 0, 0, ZONE).toInstant().toEpochMilli()
+
+        fun foreground(packageName: String, millis: Long) =
+            UsageEvent(packageName, millis, UsageEvent.Type.FOREGROUND)
+
+        fun background(packageName: String, millis: Long) =
+            UsageEvent(packageName, millis, UsageEvent.Type.BACKGROUND)
+
+        fun sessionBreak(millis: Long) =
+            UsageEvent("", millis, UsageEvent.Type.SESSION_BREAK)
+    }
+}
