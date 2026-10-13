@@ -95,6 +95,8 @@ fun AuditScreen(viewModel: AuditViewModel, modifier: Modifier = Modifier) {
                 is AuditUiState.Ready -> Dashboard(
                     report = current.report,
                     labels = current.labels,
+                    export = current.export,
+                    onExport = viewModel::exportReport,
                     onNewAudit = viewModel::selectRange,
                 )
 
@@ -174,6 +176,8 @@ private fun CenteredProgress() {
 private fun Dashboard(
     report: AuditReport,
     labels: Map<String, AppLabel>,
+    export: ExportState,
+    onExport: () -> Unit,
     onNewAudit: () -> Unit,
 ) {
     val zone = remember { ZoneId.systemDefault() }
@@ -210,14 +214,49 @@ private fun Dashboard(
         }
 
         item {
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = onExport,
+                enabled = export !is ExportState.Running,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (export is ExportState.Running) {
+                        stringResource(R.string.dashboard_exporting)
+                    } else {
+                        stringResource(R.string.dashboard_export)
+                    },
+                )
+            }
+            ExportMessage(export)
             TextButton(
                 onClick = onNewAudit,
-                modifier = Modifier.padding(vertical = 16.dp),
+                modifier = Modifier.padding(vertical = 8.dp),
             ) {
                 Text(stringResource(R.string.dashboard_new_audit))
             }
         }
     }
+}
+
+@Composable
+private fun ExportMessage(export: ExportState) {
+    val message = when (export) {
+        is ExportState.Done -> stringResource(R.string.dashboard_exported, export.displayName)
+        is ExportState.Failed -> stringResource(R.string.dashboard_export_failed, export.message)
+        else -> null
+    } ?: return
+
+    Text(
+        message,
+        style = MaterialTheme.typography.bodySmall,
+        color = if (export is ExportState.Failed) {
+            MaterialTheme.colorScheme.error
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        modifier = Modifier.padding(top = 8.dp),
+    )
 }
 
 @Composable

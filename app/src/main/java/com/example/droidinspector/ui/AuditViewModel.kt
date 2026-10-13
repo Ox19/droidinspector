@@ -11,6 +11,7 @@ import com.example.droidinspector.core.AuditAggregator
 import com.example.droidinspector.core.AuditRange
 import com.example.droidinspector.core.SessionBuilder
 import com.example.droidinspector.data.AppCatalog
+import com.example.droidinspector.data.PdfReportWriter
 import com.example.droidinspector.data.UsageStatsSource
 import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +30,7 @@ class AuditViewModel(
     private val catalog: AppCatalog,
     private val sessionBuilder: SessionBuilder,
     private val aggregator: AuditAggregator,
+    private val reportWriter: PdfReportWriter,
 ) : ViewModel() {
 
     private val mutableState = MutableStateFlow<AuditUiState>(AuditUiState.Consent)
@@ -69,6 +71,25 @@ class AuditViewModel(
         }
     }
 
+    /** Exporta el dashboard ya calculado; no vuelve a leer el sistema. */
+    fun exportReport() {
+        val ready = mutableState.value as? AuditUiState.Ready ?: return
+        if (ready.export is ExportState.Running) return
+
+        mutableState.value = ready.copy(export = ExportState.Running)
+        viewModelScope.launch {
+            val result = try {
+                val written = withContext(Dispatchers.IO) {
+                    reportWriter.write(ready.report, ready.labels)
+                }
+                ExportState.Done(written.displayName)
+            } catch (failure: Exception) {
+                ExportState.Failed(failure.message.orEmpty())
+            }
+            mutableState.value = ready.copy(export = result)
+        }
+    }
+
     private fun audit(range: AuditRange): AuditUiState.Ready {
         val sessions = sessionBuilder.build(usageStats.events(range), range)
         val report = aggregator.aggregate(sessions, range)
@@ -87,6 +108,7 @@ class AuditViewModel(
                     catalog = AppCatalog(appContext.packageManager),
                     sessionBuilder = SessionBuilder(),
                     aggregator = AuditAggregator(ZoneId.systemDefault()),
+                    reportWriter = PdfReportWriter(appContext),
                 )
             }
         }

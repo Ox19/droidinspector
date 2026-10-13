@@ -24,6 +24,18 @@
 
     <string name="error_title">No se pudo generar la auditoría</string>
     <string name="error_retry">Reintentar</string>
+    <string name="dashboard_export">Exportar PDF</string>
+    <string name="dashboard_exporting">Generando PDF…</string>
+    <string name="dashboard_exported">Guardado en Descargas: %1$s</string>
+    <string name="dashboard_export_failed">No se pudo guardar el PDF: %1$s</string>
+
+    <string name="pdf_title">Auditoría de uso del dispositivo</string>
+    <string name="pdf_range">Periodo auditado: %1$s a %2$s</string>
+    <string name="pdf_device">Dispositivo: %1$s · Android %2$s · Generado: %3$s</string>
+    <string name="pdf_summary">Resumen</string>
+    <string name="pdf_summary_values">Tiempo de uso: %1$s · Apps usadas: %2$d · Aperturas: %3$d</string>
+    <string name="pdf_daily">Uso por día</string>
+
     <plurals name="dashboard_launches">
         <item quantity="one">%1$d apertura</item>
         <item quantity="other">%1$d aperturas</item>
