@@ -15,11 +15,15 @@ class SessionBuilder {
 
         for (event in events.sortedBy { it.timestampMillis }) {
             when (event.type) {
-                // Un segundo FOREGROUND sin salida previa no abre otra sesión
-                UsageEvent.Type.FOREGROUND ->
+                UsageEvent.Type.FOREGROUND -> {
+                    // Solo una app tiene el foco: la entrada de otra cierra lo que quedó
+                    // abierto, aunque su evento de salida nunca llegara
+                    closeOthers(event.packageName, event.timestampMillis, openStarts, sessions)
+                    // Un segundo FOREGROUND de la misma app no abre otra sesión
                     if (!openStarts.containsKey(event.packageName)) {
                         openStarts[event.packageName] = event.timestampMillis
                     }
+                }
 
                 UsageEvent.Type.BACKGROUND ->
                     openStarts.remove(event.packageName)?.let { start ->
@@ -41,6 +45,19 @@ class SessionBuilder {
         }
 
         return sessions.mapNotNull { it.clampedTo(range) }.sortedBy { it.startMillis }
+    }
+
+    private fun closeOthers(
+        packageName: String,
+        millis: Long,
+        openStarts: MutableMap<String, Long>,
+        sessions: MutableList<AppSession>,
+    ) {
+        val others = openStarts.filterKeys { it != packageName }
+        others.forEach { (otherPackage, start) ->
+            sessions += AppSession(otherPackage, start, millis)
+            openStarts.remove(otherPackage)
+        }
     }
 
     private fun AppSession.clampedTo(range: AuditRange): AppSession? {

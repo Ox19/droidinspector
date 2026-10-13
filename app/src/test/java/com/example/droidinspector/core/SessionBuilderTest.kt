@@ -41,19 +41,39 @@ class SessionBuilderTest {
     }
 
     @Test
-    fun `keeps overlapping sessions of different apps`() {
+    fun `a foreground of another app closes the one left open`() {
+        // Caso real: la app anterior se queda sin evento de salida y su sesión se infla
         val sessions = builder.build(
             listOf(
                 foreground("chat", at(10, 9)),
                 foreground("maps", at(10, 9, 30)),
-                background("chat", at(10, 10)),
-                background("maps", at(10, 10, 30)),
+                background("maps", at(10, 10)),
             ),
             range,
         )
 
         assertEquals(2, sessions.size)
-        assertEquals(setOf("chat", "maps"), sessions.map { it.packageName }.toSet())
+        val chat = sessions.single { it.packageName == "chat" }
+        assertEquals(30 * MINUTE, chat.durationMillis)
+        assertEquals(at(10, 9, 30), chat.endMillis)
+    }
+
+    @Test
+    fun `sessions never overlap, so a day cannot exceed real time`() {
+        val sessions = builder.build(
+            listOf(
+                foreground("chat", at(10, 9)),
+                foreground("maps", at(10, 10)),
+                foreground("mail", at(10, 11)),
+                background("mail", at(10, 12)),
+            ),
+            range,
+        )
+
+        assertEquals(3 * 60 * MINUTE, sessions.sumOf { it.durationMillis })
+        sessions.zipWithNext { first, second ->
+            assertTrue("sesiones solapadas", first.endMillis <= second.startMillis)
+        }
     }
 
     @Test
