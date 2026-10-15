@@ -1,5 +1,7 @@
 package com.example.droidinspector.core
 
+import com.example.droidinspector.shared.Config
+
 /**
  * Convierte eventos sueltos en sesiones con duración, recortadas al rango.
  *
@@ -7,7 +9,9 @@ package com.example.droidinspector.core
  * de salida (la cierra la pantalla apagada o el final del rango) y dos pueden
  * solaparse en multiventana, así que se lleva una sesión abierta por paquete.
  */
-class SessionBuilder {
+class SessionBuilder(
+    private val maxUnclosedMillis: Long = Config.MAX_UNCLOSED_SESSION_MILLIS,
+) {
 
     fun build(events: List<UsageEvent>, range: AuditRange): List<AppSession> {
         val openStarts = mutableMapOf<String, Long>()
@@ -30,18 +34,20 @@ class SessionBuilder {
                         sessions += AppSession(event.packageName, start, event.timestampMillis)
                     }
 
+                // Pantalla o equipo apagados: cierra todo, pero no dice cuándo se dejó
+                // de usar de verdad, así que también se acota
                 UsageEvent.Type.SESSION_BREAK -> {
                     openStarts.forEach { (packageName, start) ->
-                        sessions += AppSession(packageName, start, event.timestampMillis)
+                        sessions += unclosedSession(packageName, start, event.timestampMillis)
                     }
                     openStarts.clear()
                 }
             }
         }
 
-        // Lo que siga abierto al acabar los eventos se cierra con el rango
+        // Lo que siga abierto al acabar los eventos se cierra con el rango, acotado
         openStarts.forEach { (packageName, start) ->
-            sessions += AppSession(packageName, start, range.endMillis)
+            sessions += unclosedSession(packageName, start, range.endMillis)
         }
 
         return sessions.mapNotNull { it.clampedTo(range) }.sortedBy { it.startMillis }
@@ -55,10 +61,14 @@ class SessionBuilder {
     ) {
         val others = openStarts.filterKeys { it != packageName }
         others.forEach { (otherPackage, start) ->
-            sessions += AppSession(otherPackage, start, millis)
+            sessions += unclosedSession(otherPackage, start, millis)
             openStarts.remove(otherPackage)
         }
     }
+
+    /** Sin evento de salida propio no se sabe cuándo acabó: se acota al tope. */
+    private fun unclosedSession(packageName: String, start: Long, end: Long) =
+        AppSession(packageName, start, minOf(end, start + maxUnclosedMillis))
 
     private fun AppSession.clampedTo(range: AuditRange): AppSession? {
         val start = maxOf(startMillis, range.startMillis)
