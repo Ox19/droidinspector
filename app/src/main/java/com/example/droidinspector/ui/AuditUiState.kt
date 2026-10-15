@@ -13,7 +13,16 @@ sealed interface AuditUiState {
     data class Ready(
         val report: AuditReport,
         val labels: Map<String, AppLabel>,
+        val export: ExportState = ExportState.Idle,
     ) : AuditUiState
 
     data class Failed(val message: String) : AuditUiState
+}
+
+/** La exportación ocurre sobre el dashboard ya visible, así que es un estado aparte. */
+sealed interface ExportState {
+    data object Idle : ExportState
+    data object Running : ExportState
+    data class Done(val displayName: String) : ExportState
+    data class Failed(val message: String) : ExportState
 }
