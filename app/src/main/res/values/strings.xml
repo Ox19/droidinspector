@@ -44,6 +44,11 @@
     <string name="pdf_summary_values">Tiempo de uso: %1$s · Apps usadas: %2$d · Aperturas: %3$d</string>
     <string name="pdf_summary_values_foreground">Tiempo en primer plano: %1$s · Apps usadas: %2$d</string>
     <string name="pdf_daily">Uso por día</string>
+    <string name="pdf_day_date">Día</string>
+    <string name="pdf_day_time">Tiempo</string>
+    <string name="pdf_day_span">Franja de actividad</string>
+    <string name="pdf_day_estimated_mark">(est.)</string>
+    <string name="pdf_day_estimated_note">(est.) = estimado: el sistema no guarda el detalle diario de ese periodo; se reparte el total del mes entre sus días.</string>
 
     <plurals name="dashboard_launches">
         <item quantity="one">%1$d apertura</item>
