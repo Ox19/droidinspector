@@ -121,11 +121,27 @@ class PdfReportWriter(private val context: Context) {
                 val time = formatDuration(day.totalMillis) +
                     if (day.estimated) " " + context.getString(com.example.droidinspector.R.string.pdf_day_estimated_mark) else ""
                 tableRow(DAY_FORMAT.format(day.date), time, spanOf(day), body)
+                // Con eventos finos, debajo del día van sus apps más usadas
+                day.perApp.take(DAILY_APPS_LIMIT).forEach { app ->
+                    val name = labels[app.packageName]?.label ?: app.packageName
+                    appOfDayRow(name, formatDuration(app.totalMillis))
+                }
             }
             if (days.any { it.estimated }) {
                 space(4f)
                 text(context.getString(com.example.droidinspector.R.string.pdf_day_estimated_note), muted)
             }
+        }
+
+        /** App listada bajo su día: sangrada y más tenue que la fila del día. */
+        private fun appOfDayRow(name: String, time: String) {
+            val lineHeight = muted.textSize * 1.5f
+            val target = canvas(lineHeight)
+            val baseline = cursorY + muted.textSize
+            val clipped = TextUtils.ellipsize(name, muted, DAY_COLUMN_WIDTH - DAILY_APP_INDENT, TextUtils.TruncateAt.END).toString()
+            target.drawText(clipped, MARGIN + DAILY_APP_INDENT, baseline, muted)
+            target.drawText(time, DAY_TIME_COLUMN, baseline, muted)
+            cursorY += lineHeight
         }
 
         /** Franja real "HH:mm–HH:mm"; en modo estimado no existe, va un guion. */
@@ -271,5 +287,7 @@ class PdfReportWriter(private val context: Context) {
         const val DAY_COLUMN_WIDTH = 230f
         const val DAY_TIME_COLUMN = 290f
         const val DAY_SPAN_COLUMN = 410f
+        const val DAILY_APP_INDENT = 16f
+        const val DAILY_APPS_LIMIT = 5
     }
 }

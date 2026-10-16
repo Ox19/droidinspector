@@ -91,6 +91,25 @@ class AuditAggregatorTest {
         assertEquals(report.totalUsageMillis, report.detailed().hourlyTotals.sumOf { it.totalMillis })
     }
 
+    @Test
+    fun `each day lists its apps by time`() {
+        val report = aggregator.aggregate(
+            listOf(
+                session("chat", at(10, 9), at(10, 10)),
+                session("maps", at(10, 9), at(10, 9, 20)),
+                session("chat", at(11, 8), at(11, 8, 30)),
+            ),
+            AuditRange(at(10, 0), at(12, 0)),
+        )
+
+        val day10 = report.dailyTotals.single { it.date == LocalDate.of(2026, 10, 10) }
+        assertEquals(listOf("chat", "maps"), day10.perApp.map { it.packageName })
+        assertEquals(60 * MINUTE, day10.perApp.first().totalMillis)
+
+        val day11 = report.dailyTotals.single { it.date == LocalDate.of(2026, 10, 11) }
+        assertEquals(listOf("chat"), day11.perApp.map { it.packageName })
+    }
+
     private fun AuditReport.detailed(): AuditDetail.Detailed =
         detail as AuditDetail.Detailed
 
