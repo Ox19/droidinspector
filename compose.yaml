@@ -69,13 +69,14 @@ services:
       - |
         socat TCP-LISTEN:5037,fork,reuseaddr TCP:host.docker.internal:5037 &
         adb wait-for-device
-        ./gradlew connectedDebugAndroidTest
+        ./gradlew connectedDebugAndroidTest; status=$$?
         # AGP devuelve éxito aunque la instalación falle y no se ejecute ningún test
         results=$$(find app/build/outputs/androidTest-results -name '*.xml' | head -1)
         if [ -z "$$results" ] || grep -q 'tests="0"' "$$results"; then
           echo "ERROR: no se ejecutó ningún test instrumentado"; exit 1
         fi
         grep -ohE 'tests="[0-9]+" [^>]*failures="[0-9]+"' "$$results"
+        exit $$status
 
 
 volumes:
