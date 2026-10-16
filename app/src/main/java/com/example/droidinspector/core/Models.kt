@@ -81,7 +81,11 @@ data class DailyTotal(
     val firstActivityMillis: Long? = null,
     val lastActivityMillis: Long? = null,
     val estimated: Boolean = false,
+    /** Apps usadas ese día, de mayor a menor tiempo. Solo con eventos finos. */
+    val perApp: List<DailyAppUsage> = emptyList(),
 )
+
+data class DailyAppUsage(val packageName: String, val totalMillis: Long)
 
 data class HourlyTotal(val hour: Int, val totalMillis: Long)
 

@@ -57,10 +57,36 @@ class AuditAggregator(private val zone: ZoneId) {
     private fun dailyTotals(sessions: List<AppSession>): List<DailyTotal> {
         val totals = distribute(sessions, ::dateAt, ::startOfNextDay)
         val spans = activitySpans(sessions)
+        val perApp = perAppByDay(sessions)
         return totals.map { (date, millis) ->
             val span = spans[date]
-            DailyTotal(date, millis, span?.first, span?.second)
+            DailyTotal(
+                date = date,
+                totalMillis = millis,
+                firstActivityMillis = span?.first,
+                lastActivityMillis = span?.second,
+                perApp = perApp[date].orEmpty(),
+            )
         }.sortedBy { it.date }
+    }
+
+    /** Por día, cuánto usó cada app (recortado al día), de mayor a menor. */
+    private fun perAppByDay(sessions: List<AppSession>): Map<LocalDate, List<DailyAppUsage>> {
+        val byDay = mutableMapOf<LocalDate, MutableMap<String, Long>>()
+        for (session in sessions) {
+            var cursor = session.startMillis
+            while (cursor < session.endMillis) {
+                val boundary = minOf(startOfNextDay(cursor), session.endMillis)
+                if (boundary <= cursor) break
+                val dayApps = byDay.getOrPut(dateAt(cursor)) { mutableMapOf() }
+                dayApps[session.packageName] = (dayApps[session.packageName] ?: 0L) + (boundary - cursor)
+                cursor = boundary
+            }
+        }
+        return byDay.mapValues { (_, apps) ->
+            apps.map { (pkg, millis) -> DailyAppUsage(pkg, millis) }
+                .sortedWith(compareByDescending<DailyAppUsage> { it.totalMillis }.thenBy { it.packageName })
+        }
     }
 
     /** Por día, el instante más temprano y el más tardío con actividad, recortado al día. */
