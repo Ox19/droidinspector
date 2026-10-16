@@ -99,6 +99,8 @@ class PdfReportWriter(private val context: Context) {
             if (report.appUsages.isEmpty()) {
                 text(context.getString(com.example.droidinspector.R.string.dashboard_empty), body)
             }
+            space(4f)
+            text(context.getString(com.example.droidinspector.R.string.pdf_excluded_note), muted)
 
             if (report.dailyTotals.isNotEmpty()) {
                 space(18f)

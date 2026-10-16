@@ -41,6 +41,7 @@
     <string name="pdf_range">Periodo auditado: %1$s a %2$s</string>
     <string name="pdf_device">Dispositivo: %1$s · Android %2$s · Generado: %3$s</string>
     <string name="pdf_requested_range">Solicitado: %1$s a %2$s</string>
+    <string name="pdf_excluded_note">No se cuentan la pantalla de inicio ni la interfaz del sistema.</string>
     <string name="pdf_summary">Resumen</string>
     <string name="pdf_summary_values">Tiempo de uso: %1$s · Apps usadas: %2$d · Aperturas: %3$d</string>
     <string name="pdf_summary_values_foreground">Tiempo en primer plano: %1$s · Apps usadas: %2$d</string>

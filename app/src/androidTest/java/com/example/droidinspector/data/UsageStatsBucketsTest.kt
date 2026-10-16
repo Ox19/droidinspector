@@ -64,6 +64,21 @@ class UsageStatsBucketsTest {
     }
 
     @Test
+    fun excludes_the_home_launcher_and_system_ui() {
+        val home = android.content.Intent(android.content.Intent.ACTION_MAIN)
+            .addCategory(android.content.Intent.CATEGORY_HOME)
+        val launcher = context.packageManager.resolveActivity(home, 0)?.activityInfo?.packageName
+
+        val packages = source.events(lastDays(7)).map { it.packageName }.toSet() +
+            source.buckets(lastDays(7), AuditBucket.DAILY).map { it.packageName }.toSet()
+
+        if (launcher != null) {
+            assertTrue("el launcher no debe contarse como app usada", launcher !in packages)
+        }
+        assertTrue("la UI del sistema no debe contarse", "com.android.systemui" !in packages)
+    }
+
+    @Test
     fun returns_nothing_for_an_empty_range() {
         val now = System.currentTimeMillis()
 
