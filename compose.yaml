@@ -45,6 +45,18 @@ services:
     network_mode: none
     command: ["./gradlew", "--offline", "--rerun-tasks", "lintDebug", "testDebugUnitTest", "assembleDebug"]
 
+  # APK de release firmado. El keystore vive fuera del repo y se monta solo aquí.
+  release:
+    <<: *build
+    volumes:
+      - .:/workspace
+      - gradle-home:/home/builder/.gradle
+      - android-sdk:/opt/android-sdk
+      - android-home:/home/builder/.android
+      - ${HOME}/DroidInspector-keys:/keys:ro
+      - /dev/null:/workspace/local.properties:ro
+    command: ["./gradlew", "assembleRelease"]
+
   # Tests instrumentados contra el emulador que corre en el host. Docker Desktop hace de
   # puente hasta el adb del host, que sigue atado a 127.0.0.1: no se expone a la red.
   connected:
