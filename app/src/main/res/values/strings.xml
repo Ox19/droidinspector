@@ -10,7 +10,11 @@
     <string name="permission_open_settings">Abrir Ajustes</string>
 
     <string name="range_title">Elige el periodo</string>
-    <string name="range_retention_notice">El sistema solo conserva el detalle de los últimos %1$d días.</string>
+    <string name="range_measuring">Comprobando qué historial conserva este dispositivo…</string>
+    <string name="range_available_since">Hay datos desde el %1$s.</string>
+    <string name="mode_detailed">Detalle completo: sesiones, horarios y aperturas.</string>
+    <string name="mode_summarized">Periodo largo: el sistema solo guarda totales. Verás el tiempo por app, pero no horarios, ni aperturas, ni sesiones. El total puede abarcar algo más que las fechas elegidas.</string>
+    <string name="mode_unavailable">Este dispositivo no conserva datos tan antiguos. Elige una fecha de inicio más reciente.</string>
     <string name="range_run">Generar auditoría</string>
 
     <string name="loading">Leyendo la actividad del dispositivo…</string>
@@ -21,6 +25,7 @@
     <string name="summary_foreground_time">Tiempo en primer plano</string>
     <string name="dashboard_last_use">Último uso: %1$s</string>
     <string name="dashboard_apps_title">Tiempo por aplicación</string>
+    <string name="dashboard_effective_range">Pediste %1$s – %2$s. El sistema solo guarda totales por periodo, así que el reporte cubre el rango de arriba.</string>
     <string name="dashboard_empty">No hay actividad registrada en el periodo elegido.</string>
     <string name="dashboard_new_audit">Elegir otro periodo</string>
 
@@ -34,6 +39,7 @@
     <string name="pdf_title">Auditoría de uso del dispositivo</string>
     <string name="pdf_range">Periodo auditado: %1$s a %2$s</string>
     <string name="pdf_device">Dispositivo: %1$s · Android %2$s · Generado: %3$s</string>
+    <string name="pdf_requested_range">Solicitado: %1$s a %2$s</string>
     <string name="pdf_summary">Resumen</string>
     <string name="pdf_summary_values">Tiempo de uso: %1$s · Apps usadas: %2$d · Aperturas: %3$d</string>
     <string name="pdf_summary_values_foreground">Tiempo en primer plano: %1$s · Apps usadas: %2$d</string>
