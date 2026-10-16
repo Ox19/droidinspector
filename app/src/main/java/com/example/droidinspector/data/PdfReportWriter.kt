@@ -111,11 +111,22 @@ class PdfReportWriter(private val context: Context) {
             finishPage()
         }
 
-        private fun rangeLine(report: AuditReport): String = context.getString(
-            com.example.droidinspector.R.string.pdf_range,
-            DATE_TIME.format(Instant.ofEpochMilli(report.range.startMillis).atZone(zone)),
-            DATE_TIME.format(Instant.ofEpochMilli(report.range.endMillis).atZone(zone)),
-        )
+        /** En modo resumido se declaran los dos rangos: lo pedido y lo que de verdad cubre. */
+        private fun rangeLine(report: AuditReport): String {
+            val summarized = report.detail as? AuditDetail.Summarized
+            val shown = summarized?.effectiveRange ?: report.range
+            val base = context.getString(
+                com.example.droidinspector.R.string.pdf_range,
+                DATE_TIME.format(Instant.ofEpochMilli(shown.startMillis).atZone(zone)),
+                DATE_TIME.format(Instant.ofEpochMilli(shown.endMillis).atZone(zone)),
+            )
+            if (summarized == null) return base
+            return base + " · " + context.getString(
+                com.example.droidinspector.R.string.pdf_requested_range,
+                DATE_TIME.format(Instant.ofEpochMilli(report.range.startMillis).atZone(zone)),
+                DATE_TIME.format(Instant.ofEpochMilli(report.range.endMillis).atZone(zone)),
+            )
+        }
 
         private fun deviceLine(): String = context.getString(
             com.example.droidinspector.R.string.pdf_device,
