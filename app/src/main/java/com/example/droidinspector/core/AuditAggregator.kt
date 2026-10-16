@@ -34,9 +34,7 @@ class AuditAggregator(private val zone: ZoneId) {
             ),
             totalUsageMillis = sessions.sumOf { it.durationMillis },
             appUsages = appUsages(byPackage),
-            dailyTotals = distribute(sessions, ::dateAt, ::startOfNextDay)
-                .map { (date, millis) -> DailyTotal(date, millis) }
-                .sortedBy { it.date },
+            dailyTotals = dailyTotals(sessions),
         )
     }
 
@@ -55,6 +53,36 @@ class AuditAggregator(private val zone: ZoneId) {
      * Reparte cada sesión entre los tramos que cruza: una que pasa la medianoche suma
      * en los dos días, y una de 90 minutos suma en dos horas distintas.
      */
+    /** Un día lleva su tiempo total y la franja real: de la primera a la última actividad. */
+    private fun dailyTotals(sessions: List<AppSession>): List<DailyTotal> {
+        val totals = distribute(sessions, ::dateAt, ::startOfNextDay)
+        val spans = activitySpans(sessions)
+        return totals.map { (date, millis) ->
+            val span = spans[date]
+            DailyTotal(date, millis, span?.first, span?.second)
+        }.sortedBy { it.date }
+    }
+
+    /** Por día, el instante más temprano y el más tardío con actividad, recortado al día. */
+    private fun activitySpans(sessions: List<AppSession>): Map<LocalDate, Pair<Long, Long>> {
+        val spans = mutableMapOf<LocalDate, Pair<Long, Long>>()
+        for (session in sessions) {
+            var cursor = session.startMillis
+            while (cursor < session.endMillis) {
+                val boundary = minOf(startOfNextDay(cursor), session.endMillis)
+                if (boundary <= cursor) break
+                val date = dateAt(cursor)
+                val current = spans[date]
+                spans[date] = Pair(
+                    minOf(current?.first ?: cursor, cursor),
+                    maxOf(current?.second ?: boundary, boundary),
+                )
+                cursor = boundary
+            }
+        }
+        return spans
+    }
+
     private fun <K> distribute(
         sessions: List<AppSession>,
         keyAt: (Long) -> K,

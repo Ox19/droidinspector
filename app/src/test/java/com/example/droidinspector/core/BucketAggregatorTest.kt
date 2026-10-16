@@ -119,14 +119,30 @@ class BucketAggregatorTest {
     }
 
     @Test
-    fun `only daily buckets produce a per-day breakdown`() {
-        val buckets = listOf(bucket("chat", at(10, 1), at(10, 2), 30 * MINUTE))
-
-        val daily = aggregator.aggregate(buckets, requested, AuditBucket.DAILY)
-        val monthly = aggregator.aggregate(buckets, requested, AuditBucket.MONTHLY)
+    fun `daily buckets give real per-day totals, not estimated`() {
+        val daily = aggregator.aggregate(
+            listOf(bucket("chat", at(10, 1), at(10, 2), 30 * MINUTE)),
+            requested,
+            AuditBucket.DAILY,
+        )
 
         assertEquals(listOf(LocalDate.of(2026, 10, 1)), daily.dailyTotals.map { it.date })
-        assertTrue("sin bucket diario no se promete detalle por día", monthly.dailyTotals.isEmpty())
+        assertTrue("el detalle diario real no se marca estimado", daily.dailyTotals.none { it.estimated })
+    }
+
+    @Test
+    fun `monthly buckets spread the total across their days, marked estimated`() {
+        // Un bucket de 4 días con 40 min: el detalle diario no existe, se reparte 10 min/día
+        val monthly = aggregator.aggregate(
+            listOf(bucket("chat", at(10, 1), at(10, 5), 40 * MINUTE)),
+            requested,
+            AuditBucket.MONTHLY,
+        )
+
+        assertEquals(4, monthly.dailyTotals.size)
+        assertTrue("el reparto va marcado como estimación", monthly.dailyTotals.all { it.estimated })
+        assertEquals(10 * MINUTE, monthly.dailyTotals.first().totalMillis)
+        assertTrue("estimado no inventa franja horaria", monthly.dailyTotals.all { it.firstActivityMillis == null })
     }
 
     @Test

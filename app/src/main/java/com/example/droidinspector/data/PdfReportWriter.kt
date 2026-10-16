@@ -13,6 +13,7 @@ import android.text.TextPaint
 import android.text.TextUtils
 import com.example.droidinspector.core.AuditDetail
 import com.example.droidinspector.core.AuditReport
+import com.example.droidinspector.core.DailyTotal
 import java.io.IOException
 import java.time.Instant
 import java.time.ZoneId
@@ -103,12 +104,48 @@ class PdfReportWriter(private val context: Context) {
                 space(18f)
                 text(context.getString(com.example.droidinspector.R.string.pdf_daily), heading)
                 space(8f)
-                report.dailyTotals.forEach { daily ->
-                    row(DAY_FORMAT.format(daily.date), "", formatDuration(daily.totalMillis))
-                }
+                dailyTable(report.dailyTotals)
             }
 
             finishPage()
+        }
+
+        private fun dailyTable(days: List<DailyTotal>) {
+            tableRow(
+                context.getString(com.example.droidinspector.R.string.pdf_day_date),
+                context.getString(com.example.droidinspector.R.string.pdf_day_time),
+                context.getString(com.example.droidinspector.R.string.pdf_day_span),
+                heading,
+            )
+            days.forEach { day ->
+                val time = formatDuration(day.totalMillis) +
+                    if (day.estimated) " " + context.getString(com.example.droidinspector.R.string.pdf_day_estimated_mark) else ""
+                tableRow(DAY_FORMAT.format(day.date), time, spanOf(day), body)
+            }
+            if (days.any { it.estimated }) {
+                space(4f)
+                text(context.getString(com.example.droidinspector.R.string.pdf_day_estimated_note), muted)
+            }
+        }
+
+        /** Franja real "HH:mm–HH:mm"; en modo estimado no existe, va un guion. */
+        private fun spanOf(day: DailyTotal): String {
+            val first = day.firstActivityMillis
+            val last = day.lastActivityMillis
+            if (first == null || last == null) return "—"
+            return TIME_OF_DAY.format(Instant.ofEpochMilli(first).atZone(zone)) + "–" +
+                TIME_OF_DAY.format(Instant.ofEpochMilli(last).atZone(zone))
+        }
+
+        private fun tableRow(date: String, time: String, span: String, paint: TextPaint) {
+            val lineHeight = paint.textSize * 1.6f
+            val target = canvas(lineHeight)
+            val baseline = cursorY + paint.textSize
+            val clipped = TextUtils.ellipsize(date, paint, DAY_COLUMN_WIDTH, TextUtils.TruncateAt.END).toString()
+            target.drawText(clipped, MARGIN, baseline, paint)
+            target.drawText(time, DAY_TIME_COLUMN, baseline, paint)
+            target.drawText(span, DAY_SPAN_COLUMN, baseline, paint)
+            cursorY += lineHeight
         }
 
         /** En modo resumido se declaran los dos rangos: lo pedido y lo que de verdad cubre. */
@@ -230,5 +267,9 @@ class PdfReportWriter(private val context: Context) {
         val FILE_STAMP: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")
         val DATE_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")
         val DAY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE d MMM")
+        val TIME_OF_DAY: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+        const val DAY_COLUMN_WIDTH = 230f
+        const val DAY_TIME_COLUMN = 290f
+        const val DAY_SPAN_COLUMN = 410f
     }
 }

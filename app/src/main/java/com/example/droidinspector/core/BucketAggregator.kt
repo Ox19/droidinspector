@@ -1,6 +1,7 @@
 package com.example.droidinspector.core
 
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 
 /**
@@ -29,7 +30,8 @@ class BucketAggregator(private val zone: ZoneId) {
             totalUsageMillis = usable.sumOf { it.foregroundMillis },
             appUsages = appUsages(usable),
             // Solo el bucket diario permite una línea por día sin inventar precisión
-            dailyTotals = if (bucket == AuditBucket.DAILY) dailyTotals(usable) else emptyList(),
+            // Diario: real. Periodos más anchos: se reparte el total entre sus días (estimado)
+            dailyTotals = if (bucket == AuditBucket.DAILY) dailyTotals(usable) else proratedDaily(usable),
         )
     }
 
@@ -72,7 +74,35 @@ class BucketAggregator(private val zone: ZoneId) {
         }
 
     private fun dailyTotals(buckets: List<UsageBucket>): List<DailyTotal> =
-        buckets.groupBy { Instant.ofEpochMilli(it.startMillis).atZone(zone).toLocalDate() }
+        buckets.groupBy { dateAt(it.startMillis) }
             .map { (date, dayBuckets) -> DailyTotal(date, dayBuckets.sumOf { it.foregroundMillis }) }
             .sortedBy { it.date }
+
+    /**
+     * El sistema no guarda el detalle diario de un mes, así que el total de cada bucket se
+     * reparte a partes iguales entre los días que cubre. Es una estimación y va marcada como tal.
+     */
+    private fun proratedDaily(buckets: List<UsageBucket>): List<DailyTotal> {
+        val totals = mutableMapOf<LocalDate, Long>()
+        for (bucket in buckets) {
+            val days = daysOf(bucket.startMillis, bucket.endMillis)
+            if (days.isEmpty()) continue
+            val perDay = bucket.foregroundMillis / days.size
+            days.forEach { date -> totals[date] = (totals[date] ?: 0L) + perDay }
+        }
+        return totals.map { (date, millis) -> DailyTotal(date, millis, estimated = true) }
+            .sortedBy { it.date }
+    }
+
+    private fun daysOf(startMillis: Long, endMillis: Long): List<LocalDate> {
+        val first = dateAt(startMillis)
+        val last = dateAt(endMillis - 1)
+        if (last.isBefore(first)) return emptyList()
+        return generateSequence(first) { it.plusDays(1) }
+            .takeWhile { !it.isAfter(last) }
+            .toList()
+    }
+
+    private fun dateAt(millis: Long): LocalDate =
+        Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
 }
