@@ -27,11 +27,13 @@ implementación de cada fuente (ver *Fuera de alcance*).
 app/src/main/java/com/example/droidinspector/
 ├── MainActivity.kt        # entrypoint: tema + pantalla raíz
 ├── core/                 # lógica de negocio, sin imports de android.*
-│   ├── Models.kt          # AuditRange, UsageEvent, AppSession, AppUsage, AuditReport
+│   ├── Models.kt          # AuditRange, UsageEvent, UsageBucket, AuditDetail, AuditReport
 │   ├── SessionBuilder.kt  # eventos sueltos → sesiones con duración
-│   └── AuditAggregator.kt # sesiones → métricas del reporte
+│   ├── AuditAggregator.kt # sesiones → reporte detallado
+│   ├── BucketAggregator.kt# agregados del sistema → reporte resumido
+│   └── AuditPlanner.kt    # elige el modo según lo que el dispositivo conserva
 ├── data/                 # I/O: sistema Android, PDF, archivos
-│   ├── UsageStatsSource.kt  # eventos de uso y estado del permiso
+│   ├── UsageStatsSource.kt  # eventos, agregados, permiso y sonda de retención
 │   ├── AppCatalog.kt        # nombre e icono por paquete (PackageManager)
 │   └── PdfReportWriter.kt   # escribe el PDF vía PdfDocument + MediaStore
 ├── ui/                   # Compose + ViewModel: conecta core y data
@@ -99,18 +101,43 @@ Sin permiso de acceso de uso no hay lectura: la UI guía al usuario a Ajustes y 
 | Navegación por estado | Cuatro pantallas secuenciales; la librería de navegación no aporta |
 | `PdfDocument` del framework | Evita una dependencia de PDF |
 | `AuditReport` usa nombres de paquete | `core/` no conoce `PackageManager`; el nombre visible lo resuelve `data/` |
+| Retención medida, no cableada | Cada fabricante poda distinto; una constante daría respuestas falsas |
+| Buckets repetidos: se toma el máximo | El sistema devuelve el mismo bucket desde memoria y disco; sumarlos infla los totales |
+| Selector en modo escritura si no cabe | Con el zoom de pantalla alto quedan ~320 dp y el calendario de Material3 no se dibuja |
 | Zona horaria inyectada en `AuditAggregator` | El reparto por día y hora se prueba sin depender de la zona de la máquina |
 
-## Límite conocido
+## Dos modos de auditoría
 
-El sistema solo retiene los eventos finos de uso unos 7–10 días. El selector de rango
-debe deshabilitar las fechas anteriores. Auditar periodos más largos exigiría guardar
-instantáneas periódicas (fuera del MVP).
+El sistema retiene los eventos finos unos días, pero conserva **agregados por periodo**
+durante meses o años. De ahí dos modos, que el `AuditPlanner` elige según la retención
+**medida en el dispositivo** (varía por fabricante: en un Samsung A32 con Android 13 se
+midió historial de 13 meses).
+
+| | Detallado | Resumido |
+|---|---|---|
+| Fuente | `queryEvents` | `queryUsageStats` |
+| Alcance | pocos días | meses o años |
+| Tiempo por app | sí | sí |
+| Último uso | sí | sí |
+| Sesiones, horarios, aperturas | sí | **no** |
+
+Reglas que sostienen la credibilidad del reporte:
+
+- **No se prorratea.** Los agregados vienen por bucket completo, así que el total puede
+  cubrir más que lo pedido. Se declara el *rango efectivo* junto al solicitado, en pantalla
+  y en el PDF, en vez de repartir el total y fingir precisión.
+- **No se mezclan modos.** El total por sesiones y el tiempo en primer plano no miden lo
+  mismo, así que ni siquiera se llaman igual.
+- El tipo `AuditDetail` es sellado: el compilador impide publicar un reporte resumido con
+  horarios que nadie midió.
 
 ## Fuera de alcance
 
 - I/O dentro de `core/`.
 - Reglas de negocio dentro de `data/`.
 - Interfaces/abstracciones para una sola implementación.
+- Prorratear buckets parciales o estimar horarios en modo resumido.
+- Instantáneas periódicas propias: solo servirían hacia adelante y romperían la promesa de
+  que el PDF es el único archivo que se crea.
 - Capas adicionales a las cuatro de arriba.
 - Permiso `INTERNET` y cualquier envío de datos fuera del dispositivo.
