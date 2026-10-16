@@ -18,6 +18,8 @@
     <string name="summary_total_time">Tiempo de uso</string>
     <string name="summary_apps">Apps usadas</string>
     <string name="summary_launches">Aperturas</string>
+    <string name="summary_foreground_time">Tiempo en primer plano</string>
+    <string name="dashboard_last_use">Último uso: %1$s</string>
     <string name="dashboard_apps_title">Tiempo por aplicación</string>
     <string name="dashboard_empty">No hay actividad registrada en el periodo elegido.</string>
     <string name="dashboard_new_audit">Elegir otro periodo</string>
@@ -34,6 +36,7 @@
     <string name="pdf_device">Dispositivo: %1$s · Android %2$s · Generado: %3$s</string>
     <string name="pdf_summary">Resumen</string>
     <string name="pdf_summary_values">Tiempo de uso: %1$s · Apps usadas: %2$d · Aperturas: %3$d</string>
+    <string name="pdf_summary_values_foreground">Tiempo en primer plano: %1$s · Apps usadas: %2$d</string>
     <string name="pdf_daily">Uso por día</string>
 
     <plurals name="dashboard_launches">
