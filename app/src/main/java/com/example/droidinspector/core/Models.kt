@@ -71,7 +71,17 @@ data class AppUsageDetail(
     val firstUseMillis: Long,
 )
 
-data class DailyTotal(val date: LocalDate, val totalMillis: Long)
+/**
+ * Uso de un día. `estimated` = el sistema no guardó el detalle diario y se repartió el
+ * total del periodo; `first/lastActivityMillis` solo existen con eventos finos.
+ */
+data class DailyTotal(
+    val date: LocalDate,
+    val totalMillis: Long,
+    val firstActivityMillis: Long? = null,
+    val lastActivityMillis: Long? = null,
+    val estimated: Boolean = false,
+)
 
 data class HourlyTotal(val hour: Int, val totalMillis: Long)
 
