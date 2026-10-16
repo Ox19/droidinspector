@@ -123,9 +123,12 @@ midió historial de 13 meses).
 
 Reglas que sostienen la credibilidad del reporte:
 
-- **No se prorratea.** Los agregados vienen por bucket completo, así que el total puede
-  cubrir más que lo pedido. Se declara el *rango efectivo* junto al solicitado, en pantalla
-  y en el PDF, en vez de repartir el total y fingir precisión.
+- **Los totales no se prorratean.** El tiempo por app y el resumen son la suma real de los
+  buckets, que cubren el *rango efectivo*; este se declara junto al solicitado, en vez de
+  repartir y fingir precisión en las cifras de cabecera.
+- **El detalle diario sí se reparte, pero etiquetado.** Cuando el sistema no guarda el día
+  (buckets mensuales), el PDF reparte el total del bucket entre sus días y marca cada fila
+  como `(est.)` con una nota. Es la única parte estimada, y nunca se presenta como medida.
 - **No se mezclan modos.** El total por sesiones y el tiempo en primer plano no miden lo
   mismo, así que ni siquiera se llaman igual.
 - El tipo `AuditDetail` es sellado: el compilador impide publicar un reporte resumido con
@@ -136,7 +139,8 @@ Reglas que sostienen la credibilidad del reporte:
 - I/O dentro de `core/`.
 - Reglas de negocio dentro de `data/`.
 - Interfaces/abstracciones para una sola implementación.
-- Prorratear buckets parciales o estimar horarios en modo resumido.
+- Prorratear los **totales** o estimar horarios de actividad en modo resumido (el reparto
+  diario sí existe, pero solo en la tabla por día y siempre marcado como estimado).
 - Instantáneas periódicas propias: solo servirían hacia adelante y romperían la promesa de
   que el PDF es el único archivo que se crea.
 - Capas adicionales a las cuatro de arriba.
