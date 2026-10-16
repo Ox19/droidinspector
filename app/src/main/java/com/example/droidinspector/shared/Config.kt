@@ -9,8 +9,11 @@ object Config {
     const val RETENTION_PROBE_LOOKBACK_DAYS = 1100L
     const val EVENT_PROBE_LOOKBACK_DAYS = 30L
 
-    /** Tope del selector de rango: una auditoría anual con margen de año bisiesto. */
+    /** El selector llega hasta un año atrás… */
     const val MAX_AUDIT_DAYS = 366L
+
+    /** …pero el reporte abarca un mes como máximo: acota el volumen y lo que el sistema sostiene. */
+    const val MAX_RANGE_DAYS = 31L
 
     /** Cuántas sesiones largas se listan en el reporte. */
     const val LONGEST_SESSIONS_LIMIT = 5

@@ -175,6 +175,7 @@ private fun RangeStep(
     val start = pickerState.selectedStartDateMillis
     val end = pickerState.selectedEndDateMillis
     val range = start?.let { auditRangeOf(it, end ?: it, zone) }
+    val tooLong = range != null && rangeDays(range) > Config.MAX_RANGE_DAYS
 
     Column(Modifier.fillMaxSize()) {
         Text(
@@ -201,10 +202,19 @@ private fun RangeStep(
             },
         )
         Column(ScreenPadding) {
-            range?.let { ModeNotice(planFor(it)) }
+            if (tooLong) {
+                Text(
+                    stringResource(R.string.range_too_long, Config.MAX_RANGE_DAYS),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+            } else {
+                range?.let { ModeNotice(planFor(it)) }
+            }
             Button(
                 onClick = { onRun(range!!) },
-                enabled = range != null,
+                enabled = range != null && !tooLong,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
@@ -433,6 +443,10 @@ private fun AppIcon(drawable: Drawable?) {
 }
 
 /** El picker entrega medianoche UTC; el rango se arma en la zona del dispositivo. */
+/** Días que abarca el rango, para no pasar del mes. */
+private fun rangeDays(range: AuditRange): Long =
+    (range.endMillis - range.startMillis) / (24L * 60L * 60L * 1000L)
+
 private fun auditRangeOf(startUtcMillis: Long, endUtcMillis: Long, zone: ZoneId): AuditRange {
     val startDate = dateAtUtc(startUtcMillis)
     val endDate = dateAtUtc(endUtcMillis)

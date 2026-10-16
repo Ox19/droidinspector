@@ -12,6 +12,7 @@
     <string name="range_title">Elige el periodo</string>
     <string name="range_measuring">Comprobando qué historial conserva este dispositivo…</string>
     <string name="range_available_since">Hay datos desde el %1$s.</string>
+    <string name="range_too_long">El reporte abarca un mes como máximo (%1$d días). Acorta el rango.</string>
     <string name="mode_detailed">Detalle completo: sesiones, horarios y aperturas.</string>
     <string name="mode_summarized">Periodo largo: el sistema solo guarda totales. Verás el tiempo por app, pero no horarios, ni aperturas, ni sesiones. El total puede abarcar algo más que las fechas elegidas.</string>
     <string name="mode_unavailable">Este dispositivo no conserva datos tan antiguos. Elige una fecha de inicio más reciente.</string>
