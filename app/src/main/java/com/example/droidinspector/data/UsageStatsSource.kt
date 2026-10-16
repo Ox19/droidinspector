@@ -9,13 +9,29 @@ import android.content.pm.PackageManager
 import android.os.Process
 import android.provider.Settings
 import androidx.core.content.ContextCompat
+import com.example.droidinspector.core.AuditBucket
 import com.example.droidinspector.core.AuditRange
+import com.example.droidinspector.core.RetentionWindows
+import com.example.droidinspector.core.UsageBucket
 import com.example.droidinspector.core.UsageEvent
+import com.example.droidinspector.shared.Config
+
+/** Hasta dónde llega el historial de este dispositivo, y cuántos agregados devolvió. */
+data class RetentionProbe(
+    val windows: RetentionWindows,
+    val bucketCounts: Map<AuditBucket, Int>,
+)
 
 /**
- * Lee los eventos de uso del sistema y los traduce al modelo de `core`, que no
- * conoce `android.*`. El acceso a datos de uso es un permiso especial: no se pide
- * con un diálogo, el usuario lo concede en Ajustes.
+ * Lee del sistema las dos fuentes de uso y las traduce al modelo de `core`, que no conoce
+ * `android.*`: los eventos finos (detalle, pocos días) y los agregados por periodo
+ * (sin detalle, meses o años).
+ *
+ * El acceso a datos de uso es un permiso especial: no se pide con un diálogo, el usuario
+ * lo concede en Ajustes. Sin él, el sistema **no se comporta igual en todas partes**: un
+ * Samsung con Android 13 lanza `SecurityException` donde el emulador devuelve vacío. Aquí
+ * se normaliza a vacío para no tumbar la app, así que quien llame debe comprobar
+ * `hasPermission()` antes o confundirá "sin permiso" con "no usó nada".
  */
 class UsageStatsSource(private val context: Context) {
 
@@ -51,7 +67,11 @@ class UsageStatsSource(private val context: Context) {
             ?: return emptyList()
 
         val events = mutableListOf<UsageEvent>()
-        val cursor = manager.queryEvents(range.startMillis, range.endMillis)
+        val cursor = try {
+            manager.queryEvents(range.startMillis, range.endMillis)
+        } catch (denied: SecurityException) {
+            return emptyList()
+        }
         val systemEvent = UsageEvents.Event()
         while (cursor.hasNextEvent()) {
             cursor.getNextEvent(systemEvent)
@@ -65,6 +85,66 @@ class UsageStatsSource(private val context: Context) {
         return events
     }
 
+    /**
+     * Agregados del periodo. Se traducen uno a uno: fusionarlos o descartarlos es regla de
+     * negocio y vive en `core`. El sistema los devuelve repetidos y a veces con cifras
+     * imposibles, y esa decisión no se toma aquí.
+     */
+    fun buckets(range: AuditRange, bucket: AuditBucket): List<UsageBucket> {
+        val manager = ContextCompat.getSystemService(context, UsageStatsManager::class.java)
+            ?: return emptyList()
+
+        val stats = try {
+            manager.queryUsageStats(intervalOf(bucket), range.startMillis, range.endMillis)
+        } catch (denied: SecurityException) {
+            // Comportamiento observado en Samsung/Android 13; el emulador devuelve vacío
+            return emptyList()
+        }
+
+        return stats.orEmpty()
+            .map { bucketStats ->
+                UsageBucket(
+                    packageName = bucketStats.packageName.orEmpty(),
+                    startMillis = bucketStats.firstTimeStamp,
+                    endMillis = bucketStats.lastTimeStamp,
+                    foregroundMillis = bucketStats.totalTimeInForeground,
+                    lastUsedMillis = bucketStats.lastTimeUsed,
+                )
+            }
+    }
+
+    /**
+     * Mide hasta dónde llega hacia atrás cada fuente. Los fabricantes podan distinto, así
+     * que el alcance real se consulta en vez de asumirse.
+     */
+    fun retentionProbe(): RetentionProbe {
+        val now = System.currentTimeMillis()
+        val lookback = AuditRange(now - Config.RETENTION_PROBE_LOOKBACK_DAYS * DAY_MILLIS, now)
+        val perBucket = AuditBucket.entries.associateWith { bucket ->
+            // Un bucket sin uso no prueba que haya historia: solo cuentan los que tienen datos
+            buckets(lookback, bucket).filter { it.foregroundMillis > 0 }
+        }
+
+        return RetentionProbe(
+            windows = RetentionWindows(
+                earliestEventMillis = events(
+                    AuditRange(now - Config.EVENT_PROBE_LOOKBACK_DAYS * DAY_MILLIS, now),
+                ).minOfOrNull { it.timestampMillis },
+                earliestByBucket = perBucket.mapValues { (_, found) ->
+                    found.minOfOrNull { it.startMillis }
+                },
+            ),
+            bucketCounts = perBucket.mapValues { (_, found) -> found.size },
+        )
+    }
+
+    private fun intervalOf(bucket: AuditBucket): Int = when (bucket) {
+        AuditBucket.DAILY -> UsageStatsManager.INTERVAL_DAILY
+        AuditBucket.WEEKLY -> UsageStatsManager.INTERVAL_WEEKLY
+        AuditBucket.MONTHLY -> UsageStatsManager.INTERVAL_MONTHLY
+        AuditBucket.YEARLY -> UsageStatsManager.INTERVAL_YEARLY
+    }
+
     private fun typeOf(systemEventType: Int): UsageEvent.Type? = when (systemEventType) {
         UsageEvents.Event.ACTIVITY_RESUMED -> UsageEvent.Type.FOREGROUND
         // STOPPED llega después de PAUSED; el segundo queda huérfano y se ignora al construir sesiones
@@ -74,5 +154,9 @@ class UsageStatsSource(private val context: Context) {
         UsageEvents.Event.SCREEN_NON_INTERACTIVE,
         UsageEvents.Event.DEVICE_SHUTDOWN -> UsageEvent.Type.SESSION_BREAK
         else -> null
+    }
+
+    private companion object {
+        const val DAY_MILLIS = 24L * 60L * 60L * 1000L
     }
 }
