@@ -1,13 +1,15 @@
 package com.example.droidinspector.ui
 
 import com.example.droidinspector.core.AuditReport
+import com.example.droidinspector.core.RetentionWindows
 import com.example.droidinspector.data.AppLabel
 
 /** Pasos de la auditoría, en el orden en que los recorre el usuario. */
 sealed interface AuditUiState {
     data object Consent : AuditUiState
     data object PermissionRequired : AuditUiState
-    data object RangeSelection : AuditUiState
+    /** `retention` es null mientras se mide qué conserva el dispositivo. */
+    data class RangeSelection(val retention: RetentionWindows? = null) : AuditUiState
     data object Loading : AuditUiState
 
     data class Ready(
