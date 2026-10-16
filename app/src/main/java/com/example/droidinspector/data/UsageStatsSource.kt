@@ -5,6 +5,7 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ResolveInfo
 import android.content.pm.PackageManager
 import android.os.Process
 import android.provider.Settings
@@ -76,11 +77,9 @@ class UsageStatsSource(private val context: Context) {
         while (cursor.hasNextEvent()) {
             cursor.getNextEvent(systemEvent)
             val type = typeOf(systemEvent.eventType) ?: continue
-            events += UsageEvent(
-                packageName = systemEvent.packageName.orEmpty(),
-                timestampMillis = systemEvent.timeStamp,
-                type = type,
-            )
+            val packageName = systemEvent.packageName.orEmpty()
+            if (type != UsageEvent.Type.SESSION_BREAK && packageName in excludedPackages()) continue
+            events += UsageEvent(packageName, systemEvent.timeStamp, type)
         }
         return events
     }
@@ -102,6 +101,7 @@ class UsageStatsSource(private val context: Context) {
         }
 
         return stats.orEmpty()
+            .filter { it.packageName !in excludedPackages() }
             .map { bucketStats ->
                 UsageBucket(
                     packageName = bucketStats.packageName.orEmpty(),
@@ -137,6 +137,24 @@ class UsageStatsSource(private val context: Context) {
             bucketCounts = perBucket.mapValues { (_, found) -> found.size },
         )
     }
+
+    /**
+     * Superficies que no son apps que el usuario "usa": la pantalla de inicio del equipo
+     * (se detecta la real, no una lista fija) y la interfaz del sistema. Excluirlas alinea
+     * la auditoría con lo que mide Bienestar Digital.
+     */
+    private fun excludedPackages(): Set<String> {
+        if (cachedExcluded != null) return cachedExcluded!!
+        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val launcher: ResolveInfo? = context.packageManager.resolveActivity(home, 0)
+        cachedExcluded = setOfNotNull(
+            launcher?.activityInfo?.packageName,
+            "com.android.systemui",
+        )
+        return cachedExcluded!!
+    }
+
+    private var cachedExcluded: Set<String>? = null
 
     private fun intervalOf(bucket: AuditBucket): Int = when (bucket) {
         AuditBucket.DAILY -> UsageStatsManager.INTERVAL_DAILY
