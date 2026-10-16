@@ -26,9 +26,9 @@ class AuditAggregatorTest {
         assertEquals((60 + 30 + 120) * MINUTE, report.totalUsageMillis)
         assertEquals(listOf("maps", "chat"), report.appUsages.map { it.packageName })
         val chat = report.appUsages.single { it.packageName == "chat" }
-        assertEquals(2, chat.launchCount)
+        assertEquals(2, report.detailed().perApp.getValue("chat").launchCount)
         assertEquals(90 * MINUTE, chat.totalMillis)
-        assertEquals(at(10, 9), chat.firstUseMillis)
+        assertEquals(at(10, 9), report.detailed().perApp.getValue("chat").firstUseMillis)
         assertEquals(at(10, 11, 30), chat.lastUseMillis)
     }
 
@@ -54,17 +54,17 @@ class AuditAggregatorTest {
             range,
         )
 
-        assertEquals(30 * MINUTE, report.hourlyTotals[9].totalMillis)
-        assertEquals(60 * MINUTE, report.hourlyTotals[10].totalMillis)
-        assertEquals(0L, report.hourlyTotals[11].totalMillis)
+        assertEquals(30 * MINUTE, report.detailed().hourlyTotals[9].totalMillis)
+        assertEquals(60 * MINUTE, report.detailed().hourlyTotals[10].totalMillis)
+        assertEquals(0L, report.detailed().hourlyTotals[11].totalMillis)
     }
 
     @Test
     fun `hourly totals always cover the full day`() {
         val report = aggregator.aggregate(emptyList(), range)
 
-        assertEquals(24, report.hourlyTotals.size)
-        assertEquals((0..23).toList(), report.hourlyTotals.map { it.hour })
+        assertEquals(24, report.detailed().hourlyTotals.size)
+        assertEquals((0..23).toList(), report.detailed().hourlyTotals.map { it.hour })
         assertEquals(0L, report.totalUsageMillis)
     }
 
@@ -74,8 +74,8 @@ class AuditAggregatorTest {
 
         val report = aggregator.aggregate(sessions, range)
 
-        assertEquals(5, report.longestSessions.size)
-        assertEquals("app8", report.longestSessions.first().packageName)
+        assertEquals(5, report.detailed().longestSessions.size)
+        assertEquals("app8", report.detailed().longestSessions.first().packageName)
     }
 
     @Test
@@ -88,8 +88,11 @@ class AuditAggregatorTest {
         val report = aggregator.aggregate(sessions, range)
 
         assertEquals(report.totalUsageMillis, report.dailyTotals.sumOf { it.totalMillis })
-        assertEquals(report.totalUsageMillis, report.hourlyTotals.sumOf { it.totalMillis })
+        assertEquals(report.totalUsageMillis, report.detailed().hourlyTotals.sumOf { it.totalMillis })
     }
+
+    private fun AuditReport.detailed(): AuditDetail.Detailed =
+        detail as AuditDetail.Detailed
 
     private companion object {
         const val MINUTE = 60_000L

@@ -42,6 +42,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.runtime.DisposableEffect
 import com.example.droidinspector.R
 import com.example.droidinspector.core.AppUsage
+import com.example.droidinspector.core.AuditDetail
 import com.example.droidinspector.core.AuditRange
 import com.example.droidinspector.core.AuditReport
 import com.example.droidinspector.data.AppLabel
@@ -209,7 +210,7 @@ private fun Dashboard(
         }
 
         items(report.appUsages, key = { it.packageName }) { usage ->
-            AppUsageRow(usage, labels[usage.packageName])
+            AppUsageRow(usage, labels[usage.packageName], report.detail)
             HorizontalDivider()
         }
 
@@ -265,12 +266,25 @@ private fun SummaryRow(report: AuditReport) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        SummaryCell(stringResource(R.string.summary_total_time), formatDuration(report.totalUsageMillis))
-        SummaryCell(stringResource(R.string.summary_apps), report.appUsages.size.toString())
+        val detail = report.detail
         SummaryCell(
-            stringResource(R.string.summary_launches),
-            report.appUsages.sumOf { it.launchCount }.toString(),
+            // El total no mide lo mismo en cada modo, así que tampoco se llama igual
+            stringResource(
+                if (detail is AuditDetail.Detailed) {
+                    R.string.summary_total_time
+                } else {
+                    R.string.summary_foreground_time
+                },
+            ),
+            formatDuration(report.totalUsageMillis),
         )
+        SummaryCell(stringResource(R.string.summary_apps), report.appUsages.size.toString())
+        if (detail is AuditDetail.Detailed) {
+            SummaryCell(
+                stringResource(R.string.summary_launches),
+                detail.perApp.values.sumOf { it.launchCount }.toString(),
+            )
+        }
     }
 }
 
@@ -283,7 +297,7 @@ private fun SummaryCell(label: String, value: String) {
 }
 
 @Composable
-private fun AppUsageRow(usage: AppUsage, label: AppLabel?) {
+private fun AppUsageRow(usage: AppUsage, label: AppLabel?, detail: AuditDetail) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -294,12 +308,20 @@ private fun AppUsageRow(usage: AppUsage, label: AppLabel?) {
         Spacer(Modifier.size(12.dp))
         Column(Modifier.weight(1f)) {
             Text(label?.label ?: usage.packageName, style = MaterialTheme.typography.bodyLarge)
+            val launches = (detail as? AuditDetail.Detailed)?.perApp?.get(usage.packageName)
             Text(
-                pluralStringResource(
-                    R.plurals.dashboard_launches,
-                    usage.launchCount,
-                    usage.launchCount,
-                ),
+                if (launches != null) {
+                    pluralStringResource(
+                        R.plurals.dashboard_launches,
+                        launches.launchCount,
+                        launches.launchCount,
+                    )
+                } else {
+                    stringResource(
+                        R.string.dashboard_last_use,
+                        formatDay(usage.lastUseMillis, ZoneId.systemDefault()),
+                    )
+                },
                 style = MaterialTheme.typography.labelSmall,
             )
         }

@@ -16,28 +16,36 @@ class AuditAggregator(private val zone: ZoneId) {
     fun aggregate(sessions: List<AppSession>, range: AuditRange): AuditReport {
         val hourlyByHour = distribute(sessions, ::hourAt, ::startOfNextHour)
 
+        val byPackage = sessions.groupBy { it.packageName }
+
         return AuditReport(
             range = range,
+            detail = AuditDetail.Detailed(
+                hourlyTotals = (0..23).map { HourlyTotal(it, hourlyByHour[it] ?: 0L) },
+                longestSessions = sessions
+                    .sortedByDescending { it.durationMillis }
+                    .take(Config.LONGEST_SESSIONS_LIMIT),
+                perApp = byPackage.mapValues { (_, appSessions) ->
+                    AppUsageDetail(
+                        launchCount = appSessions.size,
+                        firstUseMillis = appSessions.minOf { it.startMillis },
+                    )
+                },
+            ),
             totalUsageMillis = sessions.sumOf { it.durationMillis },
-            appUsages = appUsages(sessions),
+            appUsages = appUsages(byPackage),
             dailyTotals = distribute(sessions, ::dateAt, ::startOfNextDay)
                 .map { (date, millis) -> DailyTotal(date, millis) }
                 .sortedBy { it.date },
-            hourlyTotals = (0..23).map { HourlyTotal(it, hourlyByHour[it] ?: 0L) },
-            longestSessions = sessions
-                .sortedByDescending { it.durationMillis }
-                .take(Config.LONGEST_SESSIONS_LIMIT),
         )
     }
 
-    private fun appUsages(sessions: List<AppSession>): List<AppUsage> =
-        sessions.groupBy { it.packageName }
+    private fun appUsages(byPackage: Map<String, List<AppSession>>): List<AppUsage> =
+        byPackage
             .map { (packageName, appSessions) ->
                 AppUsage(
                     packageName = packageName,
                     totalMillis = appSessions.sumOf { it.durationMillis },
-                    launchCount = appSessions.size,
-                    firstUseMillis = appSessions.minOf { it.startMillis },
                     lastUseMillis = appSessions.maxOf { it.endMillis },
                 )
             }

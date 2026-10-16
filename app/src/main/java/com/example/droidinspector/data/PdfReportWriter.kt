@@ -11,6 +11,7 @@ import android.os.Build
 import android.provider.MediaStore
 import android.text.TextPaint
 import android.text.TextUtils
+import com.example.droidinspector.core.AuditDetail
 import com.example.droidinspector.core.AuditReport
 import java.io.IOException
 import java.time.Instant
@@ -87,9 +88,12 @@ class PdfReportWriter(private val context: Context) {
 
             text(context.getString(com.example.droidinspector.R.string.dashboard_apps_title), heading)
             space(8f)
+            val detail = report.detail as? AuditDetail.Detailed
             report.appUsages.forEach { usage ->
                 val name = labels[usage.packageName]?.label ?: usage.packageName
-                row(name, usage.launchCount.toString(), formatDuration(usage.totalMillis))
+                // Sin eventos finos no hay aperturas: la columna va vacía, no a cero
+                val launches = detail?.perApp?.get(usage.packageName)?.launchCount
+                row(name, launches?.toString().orEmpty(), formatDuration(usage.totalMillis))
             }
             if (report.appUsages.isEmpty()) {
                 text(context.getString(com.example.droidinspector.R.string.dashboard_empty), body)
@@ -120,12 +124,23 @@ class PdfReportWriter(private val context: Context) {
             DATE_TIME.format(Instant.now().atZone(zone)),
         )
 
-        private fun summaryLine(report: AuditReport): String = context.getString(
-            com.example.droidinspector.R.string.pdf_summary_values,
-            formatDuration(report.totalUsageMillis),
-            report.appUsages.size,
-            report.appUsages.sumOf { it.launchCount },
-        )
+        private fun summaryLine(report: AuditReport): String {
+            val detail = report.detail
+            return if (detail is AuditDetail.Detailed) {
+                context.getString(
+                    com.example.droidinspector.R.string.pdf_summary_values,
+                    formatDuration(report.totalUsageMillis),
+                    report.appUsages.size,
+                    detail.perApp.values.sumOf { it.launchCount },
+                )
+            } else {
+                context.getString(
+                    com.example.droidinspector.R.string.pdf_summary_values_foreground,
+                    formatDuration(report.totalUsageMillis),
+                    report.appUsages.size,
+                )
+            }
+        }
 
         private fun startPage() {
             pageNumber += 1
