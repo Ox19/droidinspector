@@ -5,6 +5,13 @@ object Config {
     /** El sistema solo retiene eventos finos unos días; más atrás no hay datos fiables. */
     const val EVENT_RETENTION_DAYS = 7L
 
+    /** Hasta dónde mira la sonda para saber qué conserva el dispositivo. */
+    const val RETENTION_PROBE_LOOKBACK_DAYS = 1100L
+    const val EVENT_PROBE_LOOKBACK_DAYS = 30L
+
+    /** Tope del selector de rango: una auditoría anual con margen de año bisiesto. */
+    const val MAX_AUDIT_DAYS = 366L
+
     /** Cuántas sesiones largas se listan en el reporte. */
     const val LONGEST_SESSIONS_LIMIT = 5
 
