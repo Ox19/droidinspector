@@ -1,7 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Credenciales fuera del repo: el contenedor monta el directorio de llaves en /keys
+val keystoreProperties = file(providers.environmentVariable("KEYSTORE_DIR").getOrElse("/keys"))
+    .resolve("keystore.properties")
+    .takeIf { it.exists() }
+    ?.let { file -> Properties().apply { file.inputStream().use(::load) } }
 
 android {
     namespace = "com.example.droidinspector"
@@ -19,11 +27,25 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        keystoreProperties?.let { credentials ->
+            create("release") {
+                storeFile = file(credentials.getProperty("storeFile"))
+                storePassword = credentials.getProperty("storePassword")
+                keyAlias = credentials.getProperty("keyAlias")
+                keyPassword = credentials.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Sin keystore montado el release queda sin firmar, pero el build no se rompe
+            signingConfig = signingConfigs.findByName("release")
             optimization {
+                // Sin packageScope: reempaquetar kotlin.** rompía el acceso
+                // package-private de la stdlib (IllegalAccessError al arrancar)
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
             }
         }
     }
