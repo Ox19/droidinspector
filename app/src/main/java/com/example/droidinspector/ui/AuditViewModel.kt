@@ -13,6 +13,7 @@ import com.example.droidinspector.core.AuditPlanner
 import com.example.droidinspector.core.AuditRange
 import com.example.droidinspector.core.AuditReport
 import com.example.droidinspector.core.BucketAggregator
+import com.example.droidinspector.core.InstallEventsBuilder
 import com.example.droidinspector.core.RetentionWindows
 import com.example.droidinspector.core.SessionBuilder
 import com.example.droidinspector.data.AppCatalog
@@ -121,7 +122,7 @@ class AuditViewModel(
         // Sin permiso el sistema devuelve vacío: sin esto, el reporte diría "no usó nada"
         if (!usageStats.hasPermission()) return AuditUiState.PermissionRequired
 
-        val report = when (val plan = planner.plan(range, retention)) {
+        val base = when (val plan = planner.plan(range, retention)) {
             is AuditPlan.Detailed -> detailedReport(plan.range)
             is AuditPlan.Summarized -> bucketAggregator.aggregate(
                 usageStats.buckets(plan.range, plan.bucket),
@@ -131,11 +132,20 @@ class AuditViewModel(
             is AuditPlan.Unavailable -> return AuditUiState.Failed(UNAVAILABLE)
         }
 
+        // Instalaciones y actualizaciones del periodo: dato aparte del uso, de PackageManager
+        val report = base.copy(
+            installEvents = installEventsBuilder.build(catalog.installedPackages(), range),
+        )
+        val packages = report.appUsages.map { it.packageName } +
+            report.installEvents.map { it.packageName }
+
         return AuditUiState.Ready(
             report = report,
-            labels = catalog.labels(report.appUsages.map { it.packageName }),
+            labels = catalog.labels(packages),
         )
     }
+
+    private val installEventsBuilder = InstallEventsBuilder()
 
     private fun detailedReport(range: AuditRange): AuditReport =
         aggregator.aggregate(sessionBuilder.build(usageStats.events(range), range), range)
