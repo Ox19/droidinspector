@@ -48,7 +48,10 @@ class AuditViewModel(
 
     /** Reporte de muestra para el PoC: no mide el dispositivo. Ver README > Modo demostración. */
     fun showDemo() {
-        val report = DemoData.report(ZoneId.systemDefault())
+        val report = DemoData.report(
+            zone = ZoneId.systemDefault(),
+            targetInstalled = catalog.isInstalled(DemoData.TARGET_PACKAGE),
+        )
         mutableState.value = AuditUiState.Ready(
             report = report,
             labels = catalog.labels(DemoData.packages()),

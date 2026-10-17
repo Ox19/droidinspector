@@ -34,7 +34,7 @@ dispositivo: `adb install -r app/build/outputs/apk/debug/app-debug.apk`.
 
 La pantalla de inicio incluye **"Ver reporte de demostración"**, que muestra un reporte con
 **datos de muestra, no medidos** (editables en `ui/DemoData.kt`), para presentar cómo se ve la
-app. Incluye actividad de instalación y desinstalación de ejemplo.
+app. La actividad de instalación/desinstalación de ejemplo aparece **solo en el reporte PDF** (no en pantalla) y **solo si la app objetivo está instalada** en el dispositivo.
 
 **Importante:** la auditoría real **no** puede obtener desinstalaciones ni el historial de apps
 ya borradas — Android no guarda ese dato para una app normal. El modo demostración sirve solo
