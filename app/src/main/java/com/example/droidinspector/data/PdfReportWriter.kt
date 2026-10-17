@@ -14,6 +14,7 @@ import android.text.TextUtils
 import com.example.droidinspector.core.AuditDetail
 import com.example.droidinspector.core.AuditReport
 import com.example.droidinspector.core.DailyTotal
+import com.example.droidinspector.core.PackageEvent
 import java.io.IOException
 import java.time.Instant
 import java.time.ZoneId
@@ -109,7 +110,58 @@ class PdfReportWriter(private val context: Context) {
                 dailyTable(report.dailyTotals)
             }
 
+            space(18f)
+            text(context.getString(com.example.droidinspector.R.string.pdf_installs), heading)
+            space(8f)
+            installTable(report.installEvents)
+
             finishPage()
+        }
+
+        /** APP · FECHA · HORA · ACTIVIDAD. No hay desinstalaciones: Android no las guarda. */
+        private fun installTable(events: List<PackageEvent>) {
+            if (events.isEmpty()) {
+                text(context.getString(com.example.droidinspector.R.string.pdf_installs_empty), body)
+                return
+            }
+            installRow(
+                context.getString(com.example.droidinspector.R.string.pdf_install_app),
+                context.getString(com.example.droidinspector.R.string.pdf_install_date),
+                context.getString(com.example.droidinspector.R.string.pdf_install_time),
+                context.getString(com.example.droidinspector.R.string.pdf_install_activity),
+                heading,
+            )
+            events.forEach { event ->
+                val when_ = Instant.ofEpochMilli(event.timestampMillis).atZone(zone)
+                val activity = context.getString(
+                    if (event.type == PackageEvent.Type.INSTALL) {
+                        com.example.droidinspector.R.string.pdf_install_installed
+                    } else {
+                        com.example.droidinspector.R.string.pdf_install_updated
+                    },
+                )
+                installRow(
+                    labels[event.packageName]?.label ?: event.packageName,
+                    INSTALL_DATE.format(when_),
+                    INSTALL_TIME.format(when_),
+                    activity,
+                    body,
+                )
+            }
+            space(4f)
+            text(context.getString(com.example.droidinspector.R.string.pdf_installs_note), muted)
+        }
+
+        private fun installRow(app: String, date: String, time: String, activity: String, paint: TextPaint) {
+            val lineHeight = paint.textSize * 1.6f
+            val target = canvas(lineHeight)
+            val baseline = cursorY + paint.textSize
+            val clipped = TextUtils.ellipsize(app, paint, INSTALL_APP_WIDTH, TextUtils.TruncateAt.END).toString()
+            target.drawText(clipped, MARGIN, baseline, paint)
+            target.drawText(date, INSTALL_DATE_COLUMN, baseline, paint)
+            target.drawText(time, INSTALL_TIME_COLUMN, baseline, paint)
+            target.drawText(activity, INSTALL_ACTIVITY_COLUMN, baseline, paint)
+            cursorY += lineHeight
         }
 
         private fun dailyTable(days: List<DailyTotal>) {
@@ -291,5 +343,11 @@ class PdfReportWriter(private val context: Context) {
         const val DAY_SPAN_COLUMN = 410f
         const val DAILY_APP_INDENT = 16f
         const val DAILY_APPS_LIMIT = 5
+        const val INSTALL_APP_WIDTH = 150f
+        const val INSTALL_DATE_COLUMN = 210f
+        const val INSTALL_TIME_COLUMN = 300f
+        const val INSTALL_ACTIVITY_COLUMN = 380f
+        val INSTALL_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("d/MM/yyyy")
+        val INSTALL_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
     }
 }

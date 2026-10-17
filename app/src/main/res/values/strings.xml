@@ -42,6 +42,15 @@
     <string name="pdf_device">Dispositivo: %1$s · Android %2$s · Generado: %3$s</string>
     <string name="pdf_requested_range">Solicitado: %1$s a %2$s</string>
     <string name="pdf_excluded_note">No se cuentan la pantalla de inicio ni la interfaz del sistema.</string>
+    <string name="pdf_installs">Instalaciones y actualizaciones del periodo</string>
+    <string name="pdf_installs_empty">Ninguna app se instaló ni actualizó en el periodo.</string>
+    <string name="pdf_installs_note">No se incluyen desinstalaciones: Android no guarda ese dato. Solo apps con icono en el menú.</string>
+    <string name="pdf_install_app">APP</string>
+    <string name="pdf_install_date">FECHA</string>
+    <string name="pdf_install_time">HORA</string>
+    <string name="pdf_install_activity">ACTIVIDAD</string>
+    <string name="pdf_install_installed">Instalación</string>
+    <string name="pdf_install_updated">Actualización</string>
     <string name="pdf_summary">Resumen</string>
     <string name="pdf_summary_values">Tiempo de uso: %1$s · Apps usadas: %2$d · Aperturas: %3$d</string>
     <string name="pdf_summary_values_foreground">Tiempo en primer plano: %1$s · Apps usadas: %2$d</string>
