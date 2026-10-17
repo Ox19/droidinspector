@@ -23,6 +23,10 @@ class AppCatalog(private val packageManager: PackageManager) {
     fun labels(packageNames: Collection<String>): Map<String, AppLabel> =
         packageNames.distinct().associateWith { label(it) }
 
+    /** ¿La app está instalada y es visible al usuario? */
+    fun isInstalled(packageName: String): Boolean =
+        packageManager.getLaunchIntentForPackage(packageName) != null
+
     /**
      * Apps visibles al usuario (con icono en el menú) con sus fechas de instalación y
      * última actualización. Las de sistema sin icono se omiten: no son algo que el usuario

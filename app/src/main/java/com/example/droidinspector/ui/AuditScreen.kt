@@ -48,7 +48,6 @@ import com.example.droidinspector.R
 import com.example.droidinspector.core.AppUsage
 import com.example.droidinspector.core.AuditDetail
 import com.example.droidinspector.core.AuditPlan
-import com.example.droidinspector.core.PackageEvent
 import com.example.droidinspector.core.AuditRange
 import com.example.droidinspector.core.AuditReport
 import com.example.droidinspector.core.RetentionWindows
@@ -324,21 +323,6 @@ private fun Dashboard(
             HorizontalDivider()
         }
 
-        if (report.installEvents.isNotEmpty()) {
-            item {
-                Spacer(Modifier.height(24.dp))
-                Text(
-                    stringResource(R.string.dashboard_activity_title),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Spacer(Modifier.height(8.dp))
-            }
-            items(report.installEvents, key = { it.packageName + it.timestampMillis }) { event ->
-                ActivityRow(event, labels[event.packageName])
-                HorizontalDivider()
-            }
-        }
-
         item {
             Spacer(Modifier.height(16.dp))
             Button(
@@ -453,38 +437,6 @@ private fun AppUsageRow(usage: AppUsage, label: AppLabel?, detail: AuditDetail) 
         Text(formatDuration(usage.totalMillis), style = MaterialTheme.typography.bodyMedium)
     }
 }
-
-@Composable
-private fun ActivityRow(event: PackageEvent, label: AppLabel?) {
-    val zone = remember { ZoneId.systemDefault() }
-    val activity = stringResource(
-        when (event.type) {
-            PackageEvent.Type.INSTALL -> R.string.pdf_install_installed
-            PackageEvent.Type.UPDATE -> R.string.pdf_install_updated
-            PackageEvent.Type.UNINSTALL -> R.string.pdf_install_uninstalled
-        },
-    )
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        AppIcon(label?.icon)
-        Spacer(Modifier.size(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(label?.label ?: event.packageName, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                "${formatDay(event.timestampMillis, zone)} · " +
-                    ACTIVITY_TIME.format(java.time.Instant.ofEpochMilli(event.timestampMillis).atZone(zone)),
-                style = MaterialTheme.typography.labelSmall,
-            )
-        }
-        Text(activity, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-private val ACTIVITY_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 
 @Composable
 private fun AppIcon(drawable: Drawable?) {
