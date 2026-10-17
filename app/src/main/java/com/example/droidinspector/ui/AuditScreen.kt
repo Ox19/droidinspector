@@ -48,6 +48,7 @@ import com.example.droidinspector.R
 import com.example.droidinspector.core.AppUsage
 import com.example.droidinspector.core.AuditDetail
 import com.example.droidinspector.core.AuditPlan
+import com.example.droidinspector.core.PackageEvent
 import com.example.droidinspector.core.AuditRange
 import com.example.droidinspector.core.AuditReport
 import com.example.droidinspector.core.RetentionWindows
@@ -86,6 +87,8 @@ fun AuditScreen(viewModel: AuditViewModel, modifier: Modifier = Modifier) {
                     body = stringResource(R.string.consent_body),
                     actionLabel = stringResource(R.string.consent_accept),
                     onAction = viewModel::acceptConsent,
+                    secondaryLabel = stringResource(R.string.consent_demo),
+                    onSecondary = viewModel::showDemo,
                 )
 
                 AuditUiState.PermissionRequired -> MessageStep(
@@ -134,6 +137,8 @@ private fun MessageStep(
     body: String,
     actionLabel: String,
     onAction: () -> Unit,
+    secondaryLabel: String? = null,
+    onSecondary: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier
@@ -146,6 +151,9 @@ private fun MessageStep(
         Text(body, style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(32.dp))
         Button(onClick = onAction) { Text(actionLabel) }
+        if (secondaryLabel != null && onSecondary != null) {
+            TextButton(onClick = onSecondary) { Text(secondaryLabel) }
+        }
     }
 }
 
@@ -316,6 +324,21 @@ private fun Dashboard(
             HorizontalDivider()
         }
 
+        if (report.installEvents.isNotEmpty()) {
+            item {
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    stringResource(R.string.dashboard_activity_title),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+            items(report.installEvents, key = { it.packageName + it.timestampMillis }) { event ->
+                ActivityRow(event, labels[event.packageName])
+                HorizontalDivider()
+            }
+        }
+
         item {
             Spacer(Modifier.height(16.dp))
             Button(
@@ -430,6 +453,38 @@ private fun AppUsageRow(usage: AppUsage, label: AppLabel?, detail: AuditDetail) 
         Text(formatDuration(usage.totalMillis), style = MaterialTheme.typography.bodyMedium)
     }
 }
+
+@Composable
+private fun ActivityRow(event: PackageEvent, label: AppLabel?) {
+    val zone = remember { ZoneId.systemDefault() }
+    val activity = stringResource(
+        when (event.type) {
+            PackageEvent.Type.INSTALL -> R.string.pdf_install_installed
+            PackageEvent.Type.UPDATE -> R.string.pdf_install_updated
+            PackageEvent.Type.UNINSTALL -> R.string.pdf_install_uninstalled
+        },
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AppIcon(label?.icon)
+        Spacer(Modifier.size(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(label?.label ?: event.packageName, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                "${formatDay(event.timestampMillis, zone)} · " +
+                    ACTIVITY_TIME.format(java.time.Instant.ofEpochMilli(event.timestampMillis).atZone(zone)),
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+        Text(activity, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+private val ACTIVITY_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 
 @Composable
 private fun AppIcon(drawable: Drawable?) {

@@ -46,6 +46,15 @@ class AuditViewModel(
 
     fun acceptConsent() = evaluatePermission()
 
+    /** Reporte de muestra para el PoC: no mide el dispositivo. Ver README > Modo demostración. */
+    fun showDemo() {
+        val report = DemoData.report(ZoneId.systemDefault())
+        mutableState.value = AuditUiState.Ready(
+            report = report,
+            labels = catalog.labels(DemoData.packages()),
+        )
+    }
+
     /**
      * Solo al volver de Ajustes, que es donde se concede. No actúa sobre el consentimiento:
      * si lo hiciera, la pantalla se saltaría cuando el permiso ya está dado.

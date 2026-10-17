@@ -134,10 +134,10 @@ class PdfReportWriter(private val context: Context) {
             events.forEach { event ->
                 val when_ = Instant.ofEpochMilli(event.timestampMillis).atZone(zone)
                 val activity = context.getString(
-                    if (event.type == PackageEvent.Type.INSTALL) {
-                        com.example.droidinspector.R.string.pdf_install_installed
-                    } else {
-                        com.example.droidinspector.R.string.pdf_install_updated
+                    when (event.type) {
+                        PackageEvent.Type.INSTALL -> com.example.droidinspector.R.string.pdf_install_installed
+                        PackageEvent.Type.UPDATE -> com.example.droidinspector.R.string.pdf_install_updated
+                        PackageEvent.Type.UNINSTALL -> com.example.droidinspector.R.string.pdf_install_uninstalled
                     },
                 )
                 installRow(

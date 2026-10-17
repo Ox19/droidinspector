@@ -30,6 +30,16 @@ docker compose run --rm verify    # sin red: lint, tests y APK
 El APK queda en `app/build/outputs/apk/debug/`. Para probarlo en un emulador o
 dispositivo: `adb install -r app/build/outputs/apk/debug/app-debug.apk`.
 
+## Modo demostración
+
+La pantalla de inicio incluye **"Ver reporte de demostración"**, que muestra un reporte con
+**datos de muestra, no medidos** (editables en `ui/DemoData.kt`), para presentar cómo se ve la
+app. Incluye actividad de instalación y desinstalación de ejemplo.
+
+**Importante:** la auditoría real **no** puede obtener desinstalaciones ni el historial de apps
+ya borradas — Android no guarda ese dato para una app normal. El modo demostración sirve solo
+para mostrar el formato; no debe presentarse como una medición del dispositivo.
+
 ## Contribuir
 
 El desarrollo es *trunk-based*: ramas cortas hacia `main` mediante pull request. Todo cambio requiere CI en verde y la aprobación del dueño del repositorio.
