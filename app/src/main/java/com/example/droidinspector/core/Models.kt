@@ -87,6 +87,22 @@ data class DailyTotal(
 
 data class DailyAppUsage(val packageName: String, val totalMillis: Long)
 
+/** Hechos crudos que da el sistema sobre una app instalada. */
+data class InstalledPackage(
+    val packageName: String,
+    val firstInstallMillis: Long,
+    val lastUpdateMillis: Long,
+)
+
+/** Que una app se instaló o se actualizó, con su instante. No hay desinstalaciones: Android no las guarda. */
+data class PackageEvent(
+    val packageName: String,
+    val timestampMillis: Long,
+    val type: Type,
+) {
+    enum class Type { INSTALL, UPDATE }
+}
+
 data class HourlyTotal(val hour: Int, val totalMillis: Long)
 
 /**
@@ -119,4 +135,5 @@ data class AuditReport(
     val totalUsageMillis: Long,
     val appUsages: List<AppUsage>,
     val dailyTotals: List<DailyTotal>,
+    val installEvents: List<PackageEvent> = emptyList(),
 )
