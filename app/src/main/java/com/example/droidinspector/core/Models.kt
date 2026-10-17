@@ -100,7 +100,7 @@ data class PackageEvent(
     val timestampMillis: Long,
     val type: Type,
 ) {
-    enum class Type { INSTALL, UPDATE }
+    enum class Type { INSTALL, UPDATE, UNINSTALL }
 }
 
 data class HourlyTotal(val hour: Int, val totalMillis: Long)
