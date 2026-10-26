@@ -45,7 +45,7 @@ services:
     network_mode: none
     command: ["./gradlew", "--offline", "--rerun-tasks", "lintDebug", "testDebugUnitTest", "assembleDebug"]
 
-  # APK de release firmado. El keystore vive fuera del repo y se monta solo aquí.
+  # APK de release firmado. El keystore (keys/, ignorado por git y bloqueado en CI) se monta solo aquí.
   release:
     <<: *build
     volumes:
@@ -53,7 +53,7 @@ services:
       - gradle-home:/home/builder/.gradle
       - android-sdk:/opt/android-sdk
       - android-home:/home/builder/.android
-      - ${HOME}/DroidInspector-keys:/keys:ro
+      - ./keys:/keys:ro
       - /dev/null:/workspace/local.properties:ro
     command: ["./gradlew", "assembleRelease"]
 
