@@ -24,7 +24,7 @@ jobs:
       # El .gitignore no viaja al remoto: esto impide que se cuelen secretos o datos de clientes
       - name: Bloquear archivos prohibidos
         run: |
-          forbidden="$(git ls-files | grep -E '\.(jks|keystore|apk|aab|pdf)$|(^|/)local\.properties$|^\.claude/|^checklist-local\.md$|^docs/' || true)"
+          forbidden="$(git ls-files | grep -E '\.(jks|keystore|apk|aab|pdf)$|(^|/)(local|keystore)\.properties$|^keys/|^\.claude/|^checklist-local\.md$|^docs/' || true)"
           if [[ -n "$forbidden" ]]; then
             echo "Archivos prohibidos en el repo:"; echo "$forbidden"; exit 1
           fi
